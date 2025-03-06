@@ -1,0 +1,7 @@
+nohup python3 KATcali_level1_py3.py para1 para2 para3 para4 para5 para6 > nohup.log 2>&1 &
+nohup python3 KATcali_level1_py3.py 1684087370 m060 5 3 1.05 1 > ./logs/nohup_logs/nohup.log 2>&1 &
+------------------------------------------------------------------------------------------------------------------------
+
+nohup python3 KATcali_level1_py3.py 1684087370 m000 5 1 1.05 1 > ./logs/nohup_logs/nohup.log 2>&1 &
+nohup python3 KATcali_level1_py3.py 1684087370 m000 3 1 2.05 1 > ./logs/nohup_logs/nohup.log 2>&1 &
+nohup python3 KATcali_level1_py3.py 1684087370 m000 2 1 1.05 1 > ./logs/nohup_logs/nohup.log 2>&1 &

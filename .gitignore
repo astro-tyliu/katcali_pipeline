@@ -1,0 +1,66 @@
+# Bytecode files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Log and debug files
+logs/
+*.log
+*.out
+*.err
+debug.log
+
+# Virtual environments
+venv/
+.env/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Python packaging files
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE / Editor configuration
+.vscode/
+.idea/
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# mypy type checking cache
+.mypy_cache/
+
+# pytest temporary files
+.pytest_cache/
+
+# Django / Flask
+*.sqlite3
+db.sqlite3
+instance/
+.env
+.env.local
+config.json
+
+# macOS system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
+desktop.ini
+
+# results directory
+results/
+
+# Ignore all hidden files (except .git directory)
+.*
+!.gitignore
