@@ -60,6 +60,10 @@ desktop.ini
 
 # results directory
 results/
+results
+
+# temporary ignore
+tmp/
 
 # Ignore all hidden files (except .git directory)
 .*

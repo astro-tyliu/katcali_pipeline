@@ -14,6 +14,8 @@ import healpy as hp
 from astropy import units as u
 from matplotlib.offsetbox import AnchoredText
 import time
+import json
+import os
 import pickle
 import sys
 Tcmb=2.725
@@ -40,20 +42,24 @@ plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.l
 #plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'] = 10.0, 0.8, 1.5
 print  (plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'])
 
-input_file1='../level1/'
-input_file2='../level2/'
-output_file='./'
-
 # Select an observation block and load basic information in
 fname=sys.argv[1] #'1675632179'
 #select ant, polarization, and one channel to show data calibration
 ant=sys.argv[2] #'m059'
 pol=sys.argv[3] #'v'
+input_file1_name=sys.argv[4]
+input_file2_name=sys.argv[5]
+file_timestamp=sys.argv[6]
 recv=ant+pol
 ch_ref=3300
 
-d2=pickle.load(open(input_file2+fname+'_'+str(recv)+'_level2_Tnd_data','rb'),encoding='latin-1')
-print (d2.keys())
+input_file1=f'/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/{input_file1_name}/'
+input_file2=f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/{input_file2_name}/'
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/cali_{file_timestamp}/{fname}_{recv}/'
+os.makedirs(output_file, exist_ok=True)
+
+d2=pickle.load(open(input_file2+fname+'_'+str(recv)+'/level2_Tnd_data','rb'),encoding='latin-1')
+print(d2.keys())
 Tnd_ref_list=d2['Tnd_ref_list']
 Tnda_list=d2['Tnda_list']
 Tndb_list=d2['Tndb_list']
@@ -112,10 +118,10 @@ if ant in ants_good:
     
     # RFI flagging
     try:
-        d3 = pickle.load(open(input_file1+fname+'_'+ant+'_mask2','rb'))
+        d3 = pickle.load(open(input_file1+fname+'_'+ant+'/mask2','rb'))
         print ('# mask2 loaded')
     except(Exception):
-        d3 = pickle.load(open(input_file1+fname+'_'+ant+'_mask','rb'))
+        d3 = pickle.load(open(input_file1+fname+'_'+ant+'/mask','rb'))
         print ('# mask loaded')
                               
     mask_inter=d3['mask']
@@ -153,18 +159,22 @@ if ant in ants_good:
     gain_map=np.ma.array(np.zeros_like(vis),mask=True)
     Tsm_map=np.ma.array(np.zeros_like(vis),mask=True)
     Tel_map=np.ma.array(np.zeros_like(vis),mask=True)
+
+    channels_cali = list(range(272,2869))+list(range(3133,3547))
+    # channels_cali = list(range(3270,3330))
+    Tnd_diff_ratio_limit = 0.08
     
     ch_count=0
     
     d={}
     #####################################   
     
-    for ch_plot in list(range(272,2869))+list(range(3133,3547)):
+    for ch_plot in channels_cali:
         
         Tnd_diff_ratio=Tnd_diff_ratio_list[ch_plot]
         print ('Tnd_diff_ratio:', Tnd_diff_ratio)
         
-        if Tnd_diff_ratio<0.08:
+        if Tnd_diff_ratio<Tnd_diff_ratio_limit:
     
             try:
     
@@ -232,7 +242,7 @@ if ant in ants_good:
                     d['timestamps']=timestamps
                     d['ra']=ra
                     d['dec']=dec
-                    fs=open(output_file+fname+'_'+recv+'_level3_data','wb')
+                    fs=open(output_file+'/level3_data','wb')
                     pickle.dump(d,fs,protocol=2)
                     fs.close()
                 
@@ -245,7 +255,24 @@ if ant in ants_good:
                 print (np.shape(data))
                 print ('data reset applied.')
         else:
-            print ('***channel'+ str(ch_plot) +' skipped')   
+            print ('***channel'+ str(ch_plot) +' skipped')
+            
+    metadata = {
+        "parameters": {
+            "fname": fname,
+            "ant": ant,
+            "pol": pol,
+            "level1_input_file": input_file1_name,
+            "level2_input_file": input_file2_name,
+        },
+        "ch_ref": ch_ref,
+        "Tnd_diff_ratio_limit": Tnd_diff_ratio_limit,
+        "channels_cali": channels_cali,
+        "description": '### '+recv+' of '+fname+' finished successfully ###'
+    }
+    metadata_path = os.path.join(output_file, f"metadata.json")
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=4)
 
 ####save data####
 d['gt_param']=gt_param
@@ -260,7 +287,7 @@ d['nd_s0']=nd_s0
 d['timestamps']=timestamps
 d['ra']=ra
 d['dec']=dec
-fs=open(output_file+fname+'_'+recv+'_level3_data','wb')
+fs=open(output_file+'/level3_data','wb')
 pickle.dump(d,fs,protocol=2)
 fs.close()
 

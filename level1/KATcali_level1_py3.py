@@ -37,6 +37,7 @@ from astropy import units as u
 from scipy.interpolate import Rbf
 from scipy.stats import mode
 import os
+import json
 
 import sys
 # sys.path.insert(0, '/home/liutianyang/katcali')
@@ -89,25 +90,25 @@ p_radec=np.loadtxt('radio_source_fsky.txt')
 # scheme2: 保存同一block同一天线不同threshold下的map2.png
 # scheme3: 保存同一block同一threshold不同天线下的map2.png
 if len(sys.argv) == 1:
-    # 1684087370, 1675643846
-    # default: '1684087370', 'm060'
-    sys.argv.extend(['1684087370', 'm050', '5', '3', '1.05', '1', '1.0', '1.0'])
+    # default: '1675632179', 'm060'
+    sys.argv.extend(['1675632179', 'm060', '8.', '4.', '16.', '8.', '00000000_000000'])
 
 fname=sys.argv[1]
 ant=sys.argv[2]
-output_file="/mnt/results/katcali_results/MeerKLASS_UHF/level1/py_results/"
-#output_file="./"
 Threshold_factor1, Threshold_factor2 = float(sys.argv[3]), float(sys.argv[4])  # diode off, on
 Threshold_factor11,Threshold_factor22 = float(sys.argv[5]), float(sys.argv[6])  # diode off, on
-ch_plot=1500
-ch_ref=1500
-ratio_t=float(sys.argv[7])
-ratio_ch=float(sys.argv[8])
+file_timestamp = sys.argv[7]
+
+# base_dir="/mnt/results/katcali_results/MeerKLASS_UHF/level1/py_results/"
+base_dir = "/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/" + "clean_" + file_timestamp + "/"
+
+ch_plot=3200
+ch_ref=3200
 
 data=kio.load_data(fname)
 #print (data)
 
-target,c0,bad_ants,flux_model=kio.check_ants(fname)
+target_list,c0_list,bad_ants,flux_model_list=kio.check_ants(fname)
 
 ants_good=[]
 for i in np.array(kio.ant_list(data)):
@@ -117,7 +118,6 @@ for i in np.array(kio.ant_list(data)):
         print (str(i) + ' is bad')
 print (fname)
 print (ants_good)
-# There is no bad antenna in '1684087370'. There is also no m055 in '1684087370'.
 
 nd_on_time,nd_cycle,nd_set=kd.cal_nd_basic_para(fname)
 print (nd_on_time,nd_cycle,nd_set)
@@ -125,23 +125,26 @@ print (nd_on_time,nd_cycle,nd_set)
 # Select ant and polarization, then load data in
 
 #select ant, polarization, and one channel to show data calibration
-Thresholds = []
-ratios = "{:03d}".format(int(ratio_t * 100)) + "{:03d}".format(int(ratio_ch * 100))
-if ant in ants_good: 
-    try:
+# Thresholds = []
+# ratios = "{:03d}".format(int(ratio_t * 100)) + "{:03d}".format(int(ratio_ch * 100))
 
+if ant in ants_good: 
+    output_dir = base_dir + fname + "_" + ant + "/"
+    os.makedirs(output_dir, exist_ok=True)
+    try:  
         for index, pol in enumerate(['h','v']):
             #load data, labels, and parameters
             data.select(ants=ant,pol=pol)
             recv=ant+pol
-            Thresholds.append(str(int(Threshold_factor1 * 100)) + str(int(Threshold_factor2 * 100)) + \
-                              str(int(Threshold_factor11 * 100)) + str(int(Threshold_factor22 * 100)))
-            root_dir = output_file + fname + '/' + ant + '/' + pol + Thresholds[index] + '_' + ratios
-            os.makedirs(root_dir, exist_ok=True)
+            # Thresholds.append(str(int(Threshold_factor1 * 100)) + str(int(Threshold_factor2 * 100)) + \
+            #                   str(int(Threshold_factor11 * 100)) + str(int(Threshold_factor22 * 100)))
+
+            ch_plot_list=[300,800,1300,1800,2300,2800,3200,3500]
+            
             # elif test == 'scheme2':
-            #     os.makedirs(output_file + test + '/' + fname + '/' + ant, exist_ok=True)
+            #     os.makedirs(output_dir + test + '/' + fname + '/' + ant, exist_ok=True)
             # elif test == 'scheme3':
-            #     os.makedirs(output_file + test + '/' + fname + '/' + pol + Thresholds[index], exist_ok=True)
+            #     os.makedirs(output_dir + test + '/' + fname + '/' + pol + Thresholds[index], exist_ok=True)
             corr_id=kio.cal_corr_id(data,recv)
             assert(recv==data.corr_products[corr_id][0])
             assert(recv==data.corr_products[corr_id][1])
@@ -157,7 +160,10 @@ if ant in ants_good:
             vis=np.ma.array(vis_backup,mask=flags)
             print ('# origin mask ratio of '+recv+': '+str(np.shape(np.where(vis.mask==True))[1]/np.shape(vis)[0]/np.shape(vis)[1]))
             
-            ang_deg=kio.load_ang_deg(ra,dec,c0)
+            if isinstance(target_list, list):
+                ang_deg=kio.load_ang_deg2(ra,dec,c0_list)
+            else:
+                ang_deg=kio.load_ang_deg(ra,dec,c0_list) #modeified for xcalib
             #p_radec=np.loadtxt('radio_source.txt')
 
             dp_tt,dp_ss,dp_f,dp_w, dp_t,dp_s,dp_slew,dp_stop=kl.cal_dp_label(data,flags,ant,pol,ch_ref,ang_deg)
@@ -191,12 +197,6 @@ if ant in ants_good:
 
             dp_ptr_list=kl.cal_ptr_mask(p,p_radec,nd_s0, dp_sb,dp_se,ang_lim)
 
-            # # ch_plot_list=[600,800,1000,2200,2400,2600,2800,3000]
-            # ch_plot_list = [800,1200,1600,2000,2400,2800,3200,3600]3659
-            if fname == '1684087370':
-                ch_plot_list = [700, 1100, 1500, 1900, 2300, 2700, 3100, 3500]
-            elif fname == '1675643846':
-                ch_plot_list = [700, 1100, 1500, 1900, 2300, 2700, 3200, 3500]
             plt.figure(figsize=(24,20))
             plt.subplots_adjust(wspace=0.1,hspace=0.3)
             for i in range(len(ch_plot_list)):
@@ -211,24 +211,35 @@ if ant in ants_good:
                 plt.colorbar()
                 plt.title(fname+'_'+recv+'_ch'+str(ch_plot1))
                 #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
-            plt.savefig(root_dir + '/' + 'scatter_map0.png')
+            plt.savefig(output_dir + pol + '_scatter_map0.png')
             #plt.show()
 
             plt.figure(figsize=(24,20))
             plt.subplots_adjust(wspace=0,hspace=0.3)
             for i in range(len(ch_plot_list)):
-                ch_plot1=ch_plot_list[i]
-                p_data=np.ma.log10(vis[nd_s0,ch_plot1])
-                plt.subplot(5,2,i+1)
-                kv.plot_data(ra[nd_s0],dec[nd_s0], p_data,gsize=60)
-                #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
-                if i>len(ch_plot_list)-3:
-                    plt.xlabel('R.A.')
-                if i%2==0:
-                    plt.ylabel('Dec')
-                plt.title(fname+'_'+recv+'_ch'+str(ch_plot1))
-                #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
-            plt.savefig(root_dir + '/' + 'map0.png')
+                try:
+                    ch_plot1=ch_plot_list[i]
+                    p_data=np.ma.log10(vis[nd_s0,ch_plot1])
+                    plt.subplot(5,2,i+1)
+                    kv.plot_data(ra[nd_s0],dec[nd_s0], p_data,gsize=60)
+                    #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
+                    if i>len(ch_plot_list)-3:
+                        plt.xlabel('R.A.')
+                    if i%2==0:
+                        plt.ylabel('Dec')
+                    plt.title(fname+'_'+recv+'_ch'+str(ch_plot1))
+                    #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
+                except ValueError:
+                    xi = np.linspace(ra[nd_s0].min(), ra[nd_s0].max(), 30)
+                    yi = np.linspace(dec[nd_s0].min(), dec[nd_s0].max(), 30)
+                    # zi = griddata((ra[nd_s0], dec[nd_s0]), p_data, (xi[None, :], yi[:, None]), method = 'linear')
+                    zi = np.full((len(yi), len(xi)), np.nan)
+                    CS = plt.imshow(zi[::-1, :], extent=(ra[nd_s0].min(),ra[nd_s0].max(),dec[nd_s0].min(),dec[nd_s0].max()), cmap=plt.get_cmap('jet',255), vmin=0, vmax=1, aspect='auto')
+                    plt.colorbar(CS)
+                    CS = plt.contour(xi, yi, zi, levels=15, linewidths=0.5, colors='k')
+                    plt.xlim(ra[nd_s0].min(), ra[nd_s0].max())
+                    plt.ylim(dec[nd_s0].min(), dec[nd_s0].max())
+            plt.savefig(output_dir + pol + '_map0.png')
             #plt.show()
 
             # RFI flagging
@@ -239,7 +250,7 @@ if ant in ants_good:
             labels_1x=kl.cal_label_intersec_complex(dp_tt,dp_ss,nd_0,nd_1x,nd_ratio)
 
             flag_step=1
-            vis_clean=kr.vis_flag_v2(data, flags, ch_ref, ant,pol,vis_backup,timestamps, nd_on_time, nd_on_edge, dump_period, ang_deg, flag_step, Threshold_factor1, Threshold_factor2, ratio_t, ratio_ch, plt_key=-1)
+            vis_clean=kr.vis_flag_v2(data, flags, ch_ref, ant,pol,vis_backup,timestamps, nd_on_time, nd_on_edge, dump_period, ang_deg, flag_step, Threshold_factor1, Threshold_factor2, ratio_clean_key=0, plt_key=-1)
 
             ###second rfi
             rbf = Rbf(range(4096) ,np.ma.mean(vis[nd_0,:],axis=0), smooth=1) #vis has mask, flags has applied.
@@ -268,13 +279,13 @@ if ant in ants_good:
 
             flag_step=2
             #rfi flagging for raw vis data
-            vis_clean2_part1=kr.vis_flag_v2(data, flags, ch_ref, ant,pol,vis_clean2_part1, timestamps, nd_on_time, nd_on_edge, dump_period, ang_deg, flag_step, Threshold_factor11, Threshold_factor22, ratio_t, ratio_ch, plt_key=-1)
+            vis_clean2_part1=kr.vis_flag_v2(data, flags, ch_ref, ant,pol,vis_clean2_part1, timestamps, nd_on_time, nd_on_edge, dump_period, ang_deg, flag_step, Threshold_factor11, Threshold_factor22, ratio_clean_key=0, plt_key=-1)
 
             vis_clean2=vis_clean.copy() #reset vis_clean2
             vis_clean2.mask=vis_clean2_part1.mask
             vis_clean2.mask[dp_ptr_list,:]=vis_clean.mask[dp_ptr_list,:]
 
-            vis_clean2=kr.clean_bad_ratio(vis_clean2, ratio_t, ratio_ch)
+            vis_clean2=kr.clean_bad_ratio(vis_clean2)
 
             plt.figure(figsize=(24,20))
             plt.subplots_adjust(wspace=0.1,hspace=0.3)
@@ -292,31 +303,42 @@ if ant in ants_good:
                 #plt.xlim(-30,1)
                 #plt.ylim(-37,-24)
                 plt.colorbar()
-            plt.savefig(root_dir + '/' + 'scatter_map2.png')
+            plt.savefig(output_dir + pol + '_scatter_map2.png')
             #plt.show()
 
             plt.figure(figsize=(24,20))
             plt.subplots_adjust(wspace=0,hspace=0.3)
             for i in range(len(ch_plot_list)):
-                ch_plot1=ch_plot_list[i]
-                p_data=vis_clean2[nd_s0,ch_plot1]
-                plt.subplot(5,2,i+1)
-                kv.plot_data(ra[nd_s0],dec[nd_s0], p_data,gsize=60)
-                #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
-                if i>len(ch_plot_list)-3:
-                    plt.xlabel('R.A.')
-                if i%2==0:
-                    plt.ylabel('Dec')
-                plt.title(fname+'_'+recv+'_ch'+str(ch_plot1))
-                #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
-                #plt.xlim(-30,1)
-                #plt.ylim(-37,-24)
-            plt.savefig(root_dir + '/' + 'map2.png')
+                try:
+                    ch_plot1=ch_plot_list[i]
+                    p_data=vis_clean2[nd_s0,ch_plot1]
+                    plt.subplot(5,2,i+1)
+                    kv.plot_data(ra[nd_s0],dec[nd_s0], p_data,gsize=60)
+                    #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
+                    if i>len(ch_plot_list)-3:
+                        plt.xlabel('R.A.')
+                    if i%2==0:
+                        plt.ylabel('Dec')
+                    plt.title(fname+'_'+recv+'_ch'+str(ch_plot1))
+                    #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
+                    #plt.xlim(-30,1)
+                    #plt.ylim(-37,-24)
+                except ValueError:
+                    xi = np.linspace(ra[nd_s0].min(), ra[nd_s0].max(), 30)
+                    yi = np.linspace(dec[nd_s0].min(), dec[nd_s0].max(), 30)
+                    # zi = griddata((ra[nd_s0], dec[nd_s0]), p_data, (xi[None, :], yi[:, None]), method = 'linear')
+                    zi = np.full((len(yi), len(xi)), np.nan)
+                    CS = plt.imshow(zi[::-1, :], extent=(ra[nd_s0].min(),ra[nd_s0].max(),dec[nd_s0].min(),dec[nd_s0].max()), cmap=plt.get_cmap('jet',255), vmin=0, vmax=1, aspect='auto')
+                    plt.colorbar(CS)
+                    CS = plt.contour(xi, yi, zi, levels=15, linewidths=0.5, colors='k')
+                    plt.xlim(ra[nd_s0].min(), ra[nd_s0].max())
+                    plt.ylim(dec[nd_s0].min(), dec[nd_s0].max())
+            plt.savefig(output_dir + pol + '_map2.png')
             # elif test == 'scheme2':
-            #     plt.savefig(output_file + test + '/' + fname + '/' + ant + '/' + pol + Thresholds[index] + '_' + 'map2.png')
+            #     plt.savefig(output_dir + test + '/' + fname + '/' + ant + '/' + pol + Thresholds[index] + '_' + 'map2.png')
             # elif test == 'scheme3':
             #     plt.savefig(
-            #         output_file + test + '/' + fname + '/' + pol + Thresholds[index] + '/' + ant + '_' + 'map2.png')
+            #         output_dir + test + '/' + fname + '/' + pol + Thresholds[index] + '/' + ant + '_' + 'map2.png')
             #plt.show()
 
             vis_clean=vis_clean2.copy() #update vis_clean
@@ -343,7 +365,7 @@ if ant in ants_good:
             plt.imshow(vis_clean,aspect='auto',extent=(data.freqs[0]/1e6,data.freqs[-1]/1e6,len(timestamps),0))
             plt.xlabel('Freq (MHz)')
             #plt.savefig(str(fname)+'raw_vis.pdf', bbox_inches='tight')
-            plt.savefig(root_dir + '/' + 'raw_vis.png', bbox_inches='tight')
+            plt.savefig(output_dir + pol + '_raw_vis.png', bbox_inches='tight')
             #plt.show()
 
             plot_gsize=60
@@ -379,12 +401,12 @@ if ant in ants_good:
             plt.title('smoothed map of above')
             plt.xlabel('R.A. (J2000)')
             #plt.ylabel('Dec (J2000)')
-            plt.savefig(root_dir + '/' + 'rfi_comp_map.png', bbox_inches='tight')
+            plt.savefig(output_dir + pol + '_rfi_comp_map.png', bbox_inches='tight')
             #plt.show()
 
             d={}
             d['mask']=vis_clean.mask
-            fs=open(root_dir + '/' + 'mask','wb')
+            fs=open(output_dir + pol + '_mask','wb')
             pickle.dump(d,fs,protocol=2)
             fs.close()
             
@@ -408,9 +430,9 @@ if ant in ants_good:
         vis_v,flags_v= kio.call_vis(fname,recv2)
 
         #get mask
-        d1 = pickle.load(open(output_file + fname + '/' + ant + '/' + 'h' + Thresholds[0] + '_' + ratios + '/' + 'mask','rb'))
+        d1 = pickle.load(open(output_dir + 'h_mask','rb'))
         mask_h=d1['mask']
-        d2 = pickle.load(open(output_file + fname + '/' + ant + '/' + 'v' + Thresholds[1] + '_' + ratios + '/' + 'mask','rb'))
+        d2 = pickle.load(open(output_dir + 'v_mask','rb'))
         mask_v=d2['mask']
         #vis_clean
         vis_clean_h=np.ma.array(vis_h,mask=mask_h)
@@ -418,7 +440,7 @@ if ant in ants_good:
         print (np.ma.mean(vis_clean_h),np.ma.mean(vis_clean_v))
         #get intersection mask
         vis_div=vis_clean_h/vis_clean_v #intersection mask
-        vis_div=kr.clean_bad_ratio(vis_div,ratio_t,ratio_ch) #clean bad ratio part
+        vis_div=kr.clean_bad_ratio(vis_div) #clean bad ratio part
         #update vis_clean
         vis_clean_hh=np.ma.array(vis_clean_h,mask=vis_div.mask)
         vis_clean_vv=np.ma.array(vis_clean_v,mask=vis_div.mask)
@@ -430,8 +452,7 @@ if ant in ants_good:
 
         d={}
         d['mask']=vis_div.mask
-        inter = 'h' + Thresholds[0] + '_' + 'v' + Thresholds[1]
-        fs=open(output_file + fname + '/' + ant + '/' + inter + f'_{ratios}_mask','wb')
+        fs=open(output_dir + 'mask','wb')
         pickle.dump(d,fs,protocol=2)
         fs.close()
 
@@ -456,7 +477,7 @@ if ant in ants_good:
         axes[1].text(800, 1.05, f'mode:{round(mode_ch.mode[0], 3)}', fontsize=18, color='red')
         axes[1].text(4800, 1.05, f'mode count:{mode_ch.count[0]}', fontsize=18, color='red')
         # don't include the flags
-        plt.savefig(output_file+ fname + '/' + ant + '/' + inter + f'_{ratios}_masked_ratio.png', bbox_inches='tight')
+        plt.savefig(output_dir + 'masked_ratio.png', bbox_inches='tight')
 
         plt.figure(figsize=(14,5.4))
         plt.subplot(121)
@@ -468,7 +489,6 @@ if ant in ants_good:
         plt.twiny()
         plt.imshow(vis_clean_hh,aspect='auto',extent=(0,len(data.freqs),len(timestamps)*2,0))
         plt.xlabel('channel')
-
         plt.subplot(122)
         plt.imshow(vis_clean_vv,aspect='auto',extent=(data.freqs[0]/1e6,data.freqs[-1]/1e6,len(timestamps)*2,0))
         plt.xlabel('Freq (MHz)')
@@ -478,9 +498,8 @@ if ant in ants_good:
         plt.twiny()
         plt.imshow(vis_clean_vv,aspect='auto',extent=(0,len(data.freqs),len(timestamps)*2,0))
         plt.xlabel('channel')
-
         #plt.savefig(str(fname)+'raw_vis.pdf', bbox_inches='tight')
-        plt.savefig(output_file + fname + '/' + ant + '/' + inter + f'_{ratios}_clean_vis.png', bbox_inches='tight')
+        plt.savefig(output_dir + 'clean_vis.png', bbox_inches='tight')
         #plt.show()
 
         #show channel changes
@@ -491,7 +510,6 @@ if ant in ants_good:
                 vis_clean_pol=vis_clean_hh
             if pol=='v':
                 vis_clean_pol=vis_clean_vv
-            root_dir = output_file + fname + '/' + ant + '/' + pol + Thresholds[index] + '_' + ratios
 
             if pol == 'h':
                 vis_div_x = np.ma.array(vis_div, mask=flags_h)
@@ -518,7 +536,7 @@ if ant in ants_good:
             axes[1].text(800, 1.05, f'mode:{round(mode_chx.mode[0], 3)}', fontsize=18, color='red')
             axes[1].text(4800, 1.05, f'mode count:{mode_chx.count[0]}', fontsize=18, color='red')
             # include the flags
-            plt.savefig(root_dir + '/' + 'masked_ratio.png')
+            plt.savefig(output_dir + pol + '_masked_ratio.png')
 
             plt.figure(figsize=(24,20))
             for i in range(len(ch_plot_list)):
@@ -531,29 +549,67 @@ if ant in ants_good:
                 plt.ylabel('Dec')
                 plt.title(fname+'_'+recv+'_ch'+str(ch_plot1))
                 #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
-            plt.savefig(root_dir + '/' + 'scatter_map.png')
+            plt.savefig(output_dir + pol + '_scatter_map.png')
             #plt.show()
 
             plt.figure(figsize=(24,20))
             plt.subplots_adjust(wspace =0)
             for i in range(len(ch_plot_list)):
-                ch_plot1=ch_plot_list[i]
-                p_data=vis_clean_pol[nd_s0,ch_plot1]
-                plt.subplot(5,2,i+1)
-                #kv.plot_data(ra[nd_s0],dec[nd_s0], p_data,gsize=60)
-                kv.plot_mdata(ra[nd_s0],dec[nd_s0], p_data,gsize=plot_gsize,  grid_method='linear', levels=6, x_mask=1, y_mask=2)
-                #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
-                if i>len(ch_plot_list)-3:
-                    plt.xlabel('R.A.')
-                plt.ylabel('Dec')
-                plt.title(fname+'_'+recv+'_ch'+str(ch_plot1))
-                #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
-            plt.savefig(root_dir + '/' + 'map.png')
+                try:
+                    ch_plot1=ch_plot_list[i]
+                    p_data=vis_clean_pol[nd_s0,ch_plot1]
+                    plt.subplot(5,2,i+1)
+                    #kv.plot_data(ra[nd_s0],dec[nd_s0], p_data,gsize=60)
+                    kv.plot_mdata(ra[nd_s0],dec[nd_s0], p_data,gsize=plot_gsize,  grid_method='linear', levels=6, x_mask=1, y_mask=2)
+                    #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
+                    if i>len(ch_plot_list)-3:
+                        plt.xlabel('R.A.')
+                    plt.ylabel('Dec')
+                    plt.title(fname+'_'+recv+'_ch'+str(ch_plot1))
+                    #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
+                except ValueError:
+                    xi = np.linspace(ra[nd_s0].min(), ra[nd_s0].max(), 30)
+                    yi = np.linspace(dec[nd_s0].min(), dec[nd_s0].max(), 30)
+                    # zi = griddata((ra[nd_s0], dec[nd_s0]), p_data, (xi[None, :], yi[:, None]), method = 'linear')
+                    zi = np.full((len(yi), len(xi)), np.nan)
+                    CS = plt.imshow(zi[::-1, :], extent=(ra[nd_s0].min(),ra[nd_s0].max(),dec[nd_s0].min(),dec[nd_s0].max()), cmap=plt.get_cmap('jet',255), vmin=0, vmax=1, aspect='auto')
+                    plt.colorbar(CS)
+                    CS = plt.contour(xi, yi, zi, levels=15, linewidths=0.5, colors='k')
+                    plt.xlim(ra[nd_s0].min(), ra[nd_s0].max())
+                    plt.ylim(dec[nd_s0].min(), dec[nd_s0].max())
+            plt.savefig(output_dir + pol + '_map.png')
             #plt.show()
         print ('### '+ant+' of '+fname+' finished successfully ###')
         print ('###############################################')
+        
+        metadata = {
+            "parameters": {
+                "fname": fname,
+                "ant": ant,
+                "Threshold_factors": [Threshold_factor1, Threshold_factor2, Threshold_factor11, Threshold_factor22]
+            },
+            "ch_plot_list": ch_plot_list,
+            "ch_plot": ch_plot,
+            "ch_ref": ch_ref,
+            "description": '### '+ant+' of '+fname+' finished successfully ###'
+        }
+        metadata_path = os.path.join(output_dir, f"metadata.json")
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=4)
+            
     except(Exception):
         print ('*** '+ant+' of '+fname+' skipped becasue of some reason***')
+        metadata = {
+            "parameters": {
+                "fname": fname,
+                "ant": ant,
+                "Threshold_factors": [Threshold_factor1, Threshold_factor2, Threshold_factor11, Threshold_factor22]
+            },
+            "description": '*** '+ant+' of '+fname+' skipped becasue of some reason***'
+        }
+        metadata_path = os.path.join(output_dir, f"metadata.json")
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=4)
         import traceback
         traceback.print_exc()
         raise

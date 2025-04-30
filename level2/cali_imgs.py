@@ -4,6 +4,8 @@
 #imports
 import katdal
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pylab as plt
 import astropy.coordinates as ac
 import functools
@@ -19,13 +21,9 @@ from matplotlib.colors import LogNorm
 import time
 import pickle
 import sys
+import os
 Tcmb=2.725
-try:
-    import katcali
-except:
-    import sys
-    sys.path.insert(0, '/home/liutianyang/katcali')
-    import katcali
+import katcali
 import katcali.visualizer as kv
 import katcali.models as km
 import katcali.rfi as kr
@@ -39,18 +37,17 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 
 
-fnames = ['1684087370', '1675643846']
+# 1709832691 clean_20250428_092837 cali_20250429_073534
+# 1710869782 clean_20250428_101452 cali_20250429_073640
+# 1712685146 clean_20250428_101554 cali_20250429_073714
+# 1715012489 clean_20250428_101657 cali_20250429_073818
+fnames = ['1710869782']
+output_file = 'cali_20250429_073640'
+
 pols = ['h', 'v']
-
-py_output_file='/mnt/results/katcali_results/MeerKLASS_UHF/level2/py_results/cali_results/'
-output_file='/mnt/results/katcali_results/MeerKLASS_UHF/level2/py_results/cali_imgs/'
-
-ratio_t = 0.4
-ratio_ch = 0.5
-# ratio_ch = 0.171
-ratios = "{:03d}".format(int(ratio_t * 100)) + "{:03d}".format(int(ratio_ch * 100))
-
-ratios = "{:03d}".format(int(ratio_t * 100)) + "{:03d}".format(int(ratio_ch * 100))
+cali_output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/{output_file}/'
+output_file = cali_output_file + 'cali_imgs/'
+os.makedirs(output_file, exist_ok=True)
 
 # UHF ch_plot: (272,2869)+(3133,3547)
 for fname in fnames:
@@ -58,13 +55,16 @@ for fname in fnames:
     target, c0, bad_ants, flux_model = kio.check_ants(fname)
     for i in range(64):
         ant = f'm{i:03d}'
-        if ant not in bad_ants:
-            if fname in ['1684087370', '1675643846'] and ant in ['m024', 'm037']:
-                continue
+        # if ant not in bad_ants:
+        # if fname in ['1684087370', '1675643846'] and ant in ['m024', 'm037']:
+        #     continue
+        try:
             for pol in pols:
                 recv = ant + pol
+                with open(cali_output_file + str(fname) + '_' + str(recv) + f'/level2_data', 'rb') as f:
+                    d_r = pickle.load(f)
+                # d_r = pickle.load(open(cali_output_file + str(fname) + '_' + str(recv) + f'/level2_data', 'rb'))
                 print(fname, recv)
-                d_r = pickle.load(open(py_output_file + str(fname) + '_' + str(recv) + f'_{ratios}_level2_data', 'rb'))
                 T_map1=d_r['T_map']
                 Tresi_map1=d_r['Tresi_map']
                 gain_map1=d_r['gain_map']
@@ -74,11 +74,11 @@ for fname in fnames:
                 Tnd_diff_ratio_list1=d_r['Tnd_diff_ratio_list']
                 NRMSE1_list1=d_r['NRMSE1_list']
                 NRMSE2_list1=d_r['NRMSE2_list']
-                # d_r2=pickle.load(open(py_output_file+str(fname)+'_'+str(recv)+f'_{ratios}_level2_Tnd_data','rb'))
+                # d_r2=pickle.load(open(cali_output_file+str(fname)+'_'+str(recv)+f'_{ratios}_level2_Tnd_data','rb'))
                 # Tnd_ref_list2=d_r2['Tnd_ref_list']
                 # Tnda_list2=d_r2['Tnda_list']
                 # Tndb_list2=d_r2['Tndb_list']
-
+    
                 plt.figure(figsize=(16,5))
                 plt.subplots_adjust(hspace=0)
                 gs = gridspec.GridSpec(nrows=2, ncols=1, height_ratios=[2, 1])
@@ -95,6 +95,12 @@ for fname in fnames:
                 plt.plot(Tnd_diff_ratio_list1,'m.',ms=4)
                 plt.xlabel('channel')
                 plt.ylabel('Tnd_diff_ratio')
-                plt.savefig(output_file+'Tnd_all_'+str(fname)+'_'+str(recv)+'_'+ratios+'.png', bbox_inches='tight')
+                plt.savefig(output_file+'Tnd_all_'+str(recv)+'.png', bbox_inches='tight')
                 # plt.show()
                 plt.close()
+
+                del d_r, T_map1, Tresi_map1, gain_map1, Tnd_ref_list1, Tnda_list1, Tndb_list1
+                del Tnd_diff_ratio_list1, NRMSE1_list1, NRMSE2_list1
+        except Exception as e:
+            print(f'{ant}: {e}')
+            continue
