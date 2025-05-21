@@ -46,6 +46,8 @@ def cal_tag(target):
     #print (target)
     if target=='PKS1934-638':
         tag='1934-638'
+    if target=='PKS2153-69':
+        tag='2153-69'
     if target=='PictorA':
         tag='PictorA'
     if target=='3C273':
@@ -163,11 +165,6 @@ d2={}
 count_ch=0
 
 if ant in ants_good:
-
-    data.select()
-    data.select(targets=tag+'_u0.8')
-    target_start=data.target_indices[0]
-    data.select()
 
     # # ----------------------------------------------------------------------------------------- #
     # fs=open(output_file+'level2_data','rb')
@@ -400,21 +397,6 @@ if ant in ants_good:
                 assert(isinstance(gb0,np.float))
                 
                 Trec0=Trec_list[ch_cali]
-                # print (Trec0)
-                # eta_p0=1.0
-                # func_sm_param0=[Trec0]
-                # func_gt_param0=[ga0,0,0,0,0]
-                # print (Tnd_ref)
-                # ####fitting
-                # instru_pa=ks.solve_params0_v3(timestamps, visa_ptr, ch_cali, nd_ratio, T_ptr, eta_p0, Tnd_ref, Tnd_std, Tel, Tgal, func_gt_param0, func_sm_param0, nd_0, nd_1x, band='UHF')
-                
-                # ####get fitting result
-                # Tnda=instru_pa[0]
-                # eta_pa=instru_pa[1]
-                # sma=instru_pa[2]
-                # gta=instru_pa[3:]
-                
-                # print (Tnda, eta_pa, sma, gta)
                 
                 if target_list[0]!='':
                     print (Trec0)
@@ -445,27 +427,10 @@ if ant in ants_good:
                     gta=instru_pa[3:]
                     print (Tnda, eta_pa, sma, gta, 33333, flush=False)
 
-                
-                # ####set input parameters
-                # #Trec0=Trec_list[ch_cali]
-                # print (Trec0)
-                # eta_p0=1.0
-                # func_sm_param0=[Trec0]
-                # func_gt_param0=[gb0,0,0,0,0]
-                
-                # print (Tnd_ref)
-                
-                # ####fitting######
-                # instru_pb=ks.solve_params0_v3(timestamps, visb_ptr, ch_cali, nd_ratio, T_ptr, eta_p0, Tnd_ref, Tnd_std, Tel, Tgal,
-                #                       func_gt_param0, func_sm_param0, nd_0, nd_1x,band='UHF')
-                
-                # ######get fitting result#####
-                # Tndb=instru_pb[0]
-                # eta_pb=instru_pb[1]
-                # smb=instru_pb[2]
-                # gtb=instru_pb[3:]
-                
-                # print (Tndb, eta_pb, smb, gtb)
+                    m1=ks.calc_total_model_v3(timestamps, nd_ratio, T_ptr, eta_pa, Tnda, Tel, Tgal, gta, sma, nd_0, nd_1x)
+                    ma=np.ma.array(m1,mask=visa_ptr[:,ch_cali].mask)    
+                    ga=ks.func_gt(timestamps,gta)
+                    resia=(visa_ptr[:,ch_cali]-ma)/ga
 
                 if target_list[-1]!='':
                     ####set input parameters
@@ -486,17 +451,12 @@ if ant in ants_good:
                     eta_pb=instru_pb[1]
                     smb=instru_pb[2]
                     gtb=instru_pb[3:]
-                    
                     print (Tndb, eta_pb, smb, gtb, flush=False)
-                
-                m1=ks.calc_total_model_v3(timestamps, nd_ratio, T_ptr, eta_pa, Tnda, Tel, Tgal, gta, sma, nd_0, nd_1x)
-                ma=np.ma.array(m1,mask=visa_ptr[:,ch_cali].mask)    
-                ga=ks.func_gt(timestamps,gta)
-                resia=(visa_ptr[:,ch_cali]-ma)/ga
-                m2=ks.calc_total_model_v3(timestamps, nd_ratio, T_ptr, eta_pb, Tndb, Tel, Tgal, gtb, smb, nd_0, nd_1x)
-                mb=np.ma.array(m2,mask=visb_ptr[:,ch_cali].mask)
-                gb=ks.func_gt(timestamps,gtb)
-                resib=(visb_ptr[:,ch_cali]-mb)/gb
+
+                    m2=ks.calc_total_model_v3(timestamps, nd_ratio, T_ptr, eta_pb, Tndb, Tel, Tgal, gtb, smb, nd_0, nd_1x)
+                    mb=np.ma.array(m2,mask=visb_ptr[:,ch_cali].mask)
+                    gb=ks.func_gt(timestamps,gtb)
+                    resib=(visb_ptr[:,ch_cali]-mb)/gb
                 
                 if ch_cali == ch_plot:
                     ##show model and raw vis
@@ -579,32 +539,35 @@ if ant in ants_good:
                 
                 
                 print ('Tnd_ref: ', Tnd_ref)
+                ####data need to storage######
+                Tnd_ref_list[ch_cali]=Tnd_ref
                 if target_list[0]!='':
                     print ('Tnda: ', Tnda)
+
+                    NRMSE1=ks.cal_NRMSE(ma/ga,resia)
+                    print ('NRMSE1 =', NRMSE1)
+
+                    if Tnda>0 and Tnda<100:
+                        Tnda_list[ch_cali]=Tnda
+                        NRMSE1_list[ch_cali]=NRMSE1
+                    
                 if target_list[-1]!='':
                     print ('Tndb: ', Tndb)
+
+                    NRMSE2=ks.cal_NRMSE(mb/gb,resib)
+                    print ('NRMSE2 =', NRMSE2)
+
+                    if Tndb>0 and Tndb<100:
+                        Tndb_list[ch_cali]=Tndb
+                        NRMSE2_list[ch_cali]=NRMSE2
+                    
                 if target_list[0]!='' and target_list[-1]!='':
                     print ('average: ', (Tnda+Tndb)/2.)
                     Tnd_diff_ratio=abs(Tnda-Tndb)/np.max([Tnda,Tndb])
                     print ('Tnd_diff_ratio:', str(round(Tnd_diff_ratio*100,2)),'%')
 
-                if target_list[0]!='':
-                    NRMSE1=ks.cal_NRMSE(ma/ga,resia)
-                    print ('NRMSE1 =', NRMSE1)
-                if target_list[-1]!='':
-                    NRMSE2=ks.cal_NRMSE(mb/gb,resib)
-                    print ('NRMSE2 =', NRMSE2)
-
-                ####data need to storage######
-                Tnd_ref_list[ch_cali]=Tnd_ref
-                if Tnda>0 and Tnda<100:
-                    Tnda_list[ch_cali]=Tnda
-                    NRMSE1_list[ch_cali]=NRMSE1
-                if Tndb>0 and Tndb<100:
-                    Tndb_list[ch_cali]=Tndb
-                    NRMSE2_list[ch_cali]=NRMSE2
-                if Tnda >0 and Tndb >0 and Tnda<100 and Tndb<100:
-                    Tnd_diff_ratio_list[ch_cali]=Tnd_diff_ratio
+                    if Tnda >0 and Tndb >0 and Tnda<100 and Tndb<100:
+                        Tnd_diff_ratio_list[ch_cali]=Tnd_diff_ratio
                 
                 gta_param[ch_cali]=gta
                 gtb_param[ch_cali]=gtb
@@ -666,19 +629,19 @@ if ant in ants_good:
                     pickle.dump(d2,fs,protocol=2)
                     fs.close()
 
-                print ('***channel'+ str(ch_cali) +' finished')    
+                print ('***channel '+ str(ch_cali) +' finished')    
                 count_ch+=1
 
             except Exception as error:
                 print("An error occurred:", error) 
-                print ('***channel'+ str(ch_cali) +' failed...')
+                print ('***channel '+ str(ch_cali) +' failed...')
                 print (np.shape(data))
                 data.select()
                 data.select(ants=ant,pol=pol)
                 print (np.shape(data))
                 print ('data reset applied.')
         else:
-            print ('***channel'+ str(ch_cali) +' skipped')   
+            print ('***channel '+ str(ch_cali) +' skipped')   
         print(11111, flush=False)
             
     ####save data####
