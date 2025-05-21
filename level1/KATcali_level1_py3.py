@@ -97,10 +97,9 @@ fname=sys.argv[1]
 ant=sys.argv[2]
 Threshold_factor1, Threshold_factor2 = float(sys.argv[3]), float(sys.argv[4])  # diode off, on
 Threshold_factor11,Threshold_factor22 = float(sys.argv[5]), float(sys.argv[6])  # diode off, on
-file_timestamp = sys.argv[7]
+base_dir = sys.argv[7] + '/'
 
 # base_dir="/mnt/results/katcali_results/MeerKLASS_UHF/level1/py_results/"
-base_dir = "/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/" + "clean_" + file_timestamp + "/"
 
 ch_plot=3200
 ch_ref=3200

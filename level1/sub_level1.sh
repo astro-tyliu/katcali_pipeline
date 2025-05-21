@@ -3,12 +3,16 @@
 # 生成时间戳
 file_timestamp=$(date +"%Y%m%d_%H%M%S")
 
+fname=$1
+
 # 创建目录（存放本次运行的数据）
-OUTPUT_DIR="/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/clean_${file_timestamp}"
+
+OUTPUT_DIR="/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/${fname}_${file_timestamp}"
 logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level1/logs"
 mkdir -p ${OUTPUT_DIR}
 
-fname=$1  # 1709832691 1710869782 1712685146 1715012489 
+# '1678743988', '1682448988', '1678295187', '1676313206', '1677020482', '1679592842', '1675643846', '1678734987', '1678122565', '1689003684', '1689176790', '1676657789', '1677777992', '1688399183', '1677183387', '1679247986', '1677011008', '1675623808', '1680626188', '1677002481', '1677195529', '1681143685', '1680798562', '1684087370', '1683492604', '1681920680', '1685641589', '1679419886', '1689090392', '1675210948', '1678726283', '1684781618', '1678467685', '1679605292', '1679615321', '1679333668', '1680644082', '1677174749', '1678381591', '1675021905', '1675632179', '1681229848', '1677795989', '1678899080', '1675816512', '1675106912'
+
 if [ $# -lt 1 ]; then
     echo "Error: 1 argument is required!"
     echo "Usage: ./sub_level4.sh <fname>"
@@ -25,7 +29,7 @@ for i in {000..063}; do
     ant="m${i}"
 
     # 生成 Slurm 任务脚本
-    JOB_SCRIPT="KATcali_${ant}.sh"
+    JOB_SCRIPT="KATcali_${fname}_${ant}.sh"
 
     echo "#!/bin/bash
 #SBATCH --cpus-per-task=1
@@ -36,7 +40,7 @@ for i in {000..063}; do
 
 export SINGULARITY_SHELL=/bin/bash
 
-singularity exec /data/exp_soft/containers/katcal.sif python3 KATcali_level1_py3.py ${fname} ${ant} ${Threshold_factor1} ${Threshold_factor2} ${Threshold_factor11} ${Threshold_factor22} ${file_timestamp}" > ${JOB_SCRIPT}
+singularity exec /data/exp_soft/containers/katcal.sif python3 KATcali_level1_py3.py ${fname} ${ant} ${Threshold_factor1} ${Threshold_factor2} ${Threshold_factor11} ${Threshold_factor22} ${OUTPUT_DIR}" > ${JOB_SCRIPT}
 
     # 提交任务
     sbatch ${JOB_SCRIPT}

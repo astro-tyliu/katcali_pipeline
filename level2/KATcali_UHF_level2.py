@@ -110,12 +110,11 @@ fname=sys.argv[1]#'1684087370'#'1675632179'#
 ant=sys.argv[2]#'m060'
 pol=sys.argv[3]#'v'
 input_file_name=sys.argv[4]
-file_timestamp=sys.argv[5]
 recv=ant+pol
+output_file=sys.argv[5] + f'/{fname}_{recv}/'
 
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/{input_file_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/cali_{file_timestamp}/{fname}_{recv}/'
-os.makedirs(output_file, exist_ok=True)
+# output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/cali_{file_timestamp}/{fname}_{recv}/'
 
 data=kio.load_data(fname)
 target_list,c0_list,bad_ants,flux_model_list=kio.check_ants(fname)
@@ -261,6 +260,8 @@ if ant in ants_good:
     except(Exception):
         d3 = pickle.load(open(input_file+fname+'_'+ant+'/mask', 'rb'))
         print ('mask loaded')
+
+    os.makedirs(output_file, exist_ok=True)
         
     mask_inter=d3['mask']
     vis_clean=np.ma.array(vis,mask=flags)
