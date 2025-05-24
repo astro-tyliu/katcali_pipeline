@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import matplotlib
 matplotlib.use('AGG')
-
-#imports
 import katdal
 import numpy as np
 import matplotlib.pylab as plt
@@ -34,16 +32,15 @@ import katcali.beam_UHF as kb_u
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 import json
-print ('start @ ' + time.asctime(time.localtime(time.time())) +'#')
-print (katcali.__version__)
-print  (plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'])
+print('start @ ' + time.asctime(time.localtime(time.time())) +'#')
+print(katcali.__version__)
+print(plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'])
 plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'] = 14, 1.5, 1.5
 #plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'] = 10.0, 0.8, 1.5
-print  (plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'])
+print(plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'])
 
 
 def cal_tag(target):
-    #print (target)
     if target=='PKS1934-638':
         tag='1934-638'
     if target=='PKS2153-69':
@@ -107,10 +104,10 @@ def cal_tag(target):
 # nd_t1x_cb: nd_t1 after scan
 
 # Select an observation block and load basic information in
-fname=sys.argv[1]#'1684087370'#'1675632179'#
+fname=sys.argv[1]
 # Select ant and polarization, then load data in 
-ant=sys.argv[2]#'m060'
-pol=sys.argv[3]#'v'
+ant=sys.argv[2]
+pol=sys.argv[3]
 input_file_name=sys.argv[4]
 recv=ant+pol
 output_file=sys.argv[5] + f'/{fname}_{recv}/'
@@ -211,6 +208,7 @@ if ant in ants_good:
     #     sys.exit()
     
     channels_cali=list(range(272,2869))+list(range(3133,3547))
+    # channels_cali=list(range(2867,2869))+list(range(3133,3152))
     # channels_cali=list(range(3170,3230))
     # # ----------------------------------------------------------------------------------------- #
 
@@ -273,6 +271,7 @@ if ant in ants_good:
     beam_select='HiRes'
     #BM-III:pattern
     dp_ca,dp_cb,dp_c0a, dp_c1a,dp_c2a,dp_c3a,dp_c4a,dp_c0b,dp_c1b,dp_c2b,dp_c3b,dp_c4b,dp_c1a1,dp_c1a2,dp_c1a3,dp_c1b1,dp_c1b2,dp_c1b3=kl.cal_dp_c(fname,data,ant,pol,flags,ch_ref,dp_tt,dp_ss,ang_deg, target_start=target_start_list,n_src_off=4)
+    nd_t0,nd_t1x,nd_s0,nd_s1x,nd_t0_ca,nd_t0_cb,nd_t1x_ca,nd_t1x_cb=kl.cal_label_intersec(dp_tt,dp_ss,nd_0,nd_1x)
     Npix=256
     Ddeg=6
     pattern_fband=kb_u.load_pattern_fband(beam_select,pol)
@@ -341,10 +340,28 @@ if ant in ants_good:
     ################################################
     
     for ch_cali in channels_cali:
+
+        dp_coffa = list(dp_c0a) + list(dp_c2a) + list(dp_c3a) + list(dp_c4a)
+        dp_coffb = list(dp_c0b) + list(dp_c2b) + list(dp_c3b) + list(dp_c4b)
+        judge_1a = np.ma.median(vis_clean[dp_c1a,ch_cali])
+        judge_2a = np.ma.median(vis_clean[dp_coffa,ch_cali])
+        judge_3a = np.ma.median(vis_clean[nd_t1x_ca,ch_cali])
+        judge_4a = np.ma.median(vis_clean[nd_t0_ca,ch_cali])
+        judge_1b = np.ma.median(vis_clean[dp_c1b,ch_cali])
+        judge_2b = np.ma.median(vis_clean[dp_coffb,ch_cali])
+        judge_3b = np.ma.median(vis_clean[nd_t1x_cb,ch_cali])
+        judge_4b = np.ma.median(vis_clean[nd_t0_cb,ch_cali])
+        judges = [judge_1a, judge_2a, judge_3a, judge_4a, judge_1b, judge_2b, judge_3b, judge_4b]
+        print(f"ch_cali = {ch_cali}, judges = {judges}")
+        final_judge = False
+        for judge in judges:
+            if np.ma.is_masked(judge) or judge <= 0:
+                final_judge = True
+                break
     
         check_ratio=float(np.array(vis_clean.mask[:,ch_cali]==False).sum())/len(timestamps)
         print (ch_cali, check_ratio, flush=False)
-        if check_ratio>check_ratio_limit: #0.6
+        if check_ratio>check_ratio_limit and not final_judge: #0.6
             try:
        
                 #spill model 
@@ -445,6 +462,7 @@ if ant in ants_good:
                     ####fitting######
                     instru_pb=ks.solve_params0_v3(timestamps, visb_ptr, ch_cali, nd_ratio, T_ptr, eta_p0, Tnd_ref, Tnd_std, Tel, Tgal,
                                           func_gt_param0, func_sm_param0, nd_0, nd_1x, band='UHF')
+                    print(f"ch_cali = {ch_cali}, Tnd_ref = {Tnd_ref}",)
                     
                     ######get fitting result#####
                     Tndb=instru_pb[0]
@@ -550,6 +568,15 @@ if ant in ants_good:
                     if Tnda>0 and Tnda<100:
                         Tnda_list[ch_cali]=Tnda
                         NRMSE1_list[ch_cali]=NRMSE1
+
+                    gta_param[ch_cali]=gta
+                    gain_map[dp_ca,ch_cali]=ga[dp_ca]
+                    calT_tra=visa_ptr[:,ch_cali]/ga
+                    if Tnda>0:
+                        assert((abs(calT_tra[dp_ca]-ma[dp_ca]/ga[dp_ca]-resia[dp_ca])<1e-10).all()==True)
+                    T_map[dp_ca,ch_cali]=calT_tra[dp_ca]
+                    Tresi_map[dp_ca,ch_cali]=resia[dp_ca]
+                    sma_param[ch_cali]=sma
                     
                 if target_list[-1]!='':
                     print ('Tndb: ', Tndb)
@@ -560,6 +587,15 @@ if ant in ants_good:
                     if Tndb>0 and Tndb<100:
                         Tndb_list[ch_cali]=Tndb
                         NRMSE2_list[ch_cali]=NRMSE2
+
+                    gtb_param[ch_cali]=gtb
+                    gain_map[dp_cb,ch_cali]=gb[dp_cb]
+                    calT_trb=visb_ptr[:,ch_cali]/gb
+                    if Tndb>0:
+                        assert((abs(calT_trb[dp_cb]-mb[dp_cb]/gb[dp_cb]-resib[dp_cb])<1e-10).all()==True)
+                    T_map[dp_cb,ch_cali]=calT_trb[dp_cb]
+                    Tresi_map[dp_cb,ch_cali]=resib[dp_cb]
+                    smb_param[ch_cali]=smb
                     
                 if target_list[0]!='' and target_list[-1]!='':
                     print ('average: ', (Tnda+Tndb)/2.)
@@ -568,27 +604,6 @@ if ant in ants_good:
 
                     if Tnda >0 and Tndb >0 and Tnda<100 and Tndb<100:
                         Tnd_diff_ratio_list[ch_cali]=Tnd_diff_ratio
-                
-                gta_param[ch_cali]=gta
-                gtb_param[ch_cali]=gtb
-                
-                gain_map[dp_ca,ch_cali]=ga[dp_ca]
-                gain_map[dp_cb,ch_cali]=gb[dp_cb]
-                
-                calT_tra=visa_ptr[:,ch_cali]/ga
-                calT_trb=visb_ptr[:,ch_cali]/gb
-                if Tnda>0:
-                    assert((abs(calT_tra[dp_ca]-ma[dp_ca]/ga[dp_ca]-resia[dp_ca])<1e-10).all()==True)
-                if Tndb>0:
-                    assert((abs(calT_trb[dp_cb]-mb[dp_cb]/gb[dp_cb]-resib[dp_cb])<1e-10).all()==True)
-                T_map[dp_ca,ch_cali]=calT_tra[dp_ca]
-                T_map[dp_cb,ch_cali]=calT_trb[dp_cb]
-                
-                Tresi_map[dp_ca,ch_cali]=resia[dp_ca]
-                Tresi_map[dp_cb,ch_cali]=resib[dp_cb]
-                
-                sma_param[ch_cali]=sma
-                smb_param[ch_cali]=smb
                 
                 Tel_map[:,ch_cali]=Tel
                 

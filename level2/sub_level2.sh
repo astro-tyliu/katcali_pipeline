@@ -1,18 +1,26 @@
 #! /bin/bash
 
+# 1675210948 1675210948_20250521_161644
+# 1675623808 1675623808_20250521_161644
+# 1675632179 1675632179_20250521_161644
+# 1675643846 1675643846_20250521_161643
+
 # 1676313206 1676313206_20250520_161045
 # 1678295187 1678295187_20250520_161045
 # 1678743988 1678743988_20250520_161045
 # 1682448988 1682448988_20250520_161045
+# 1677011008 1677011008_20250521_102107
+# 1677020482 1677020482_20250521_161644
+# 1678122565 1678122565_20250521_161644
+# 1689176790 1689176790_20250521_161644
 
 # 定义 fname 列表
-# 1679592842 is a bad block
-fname="1682448988"  # 1675632179 1679247986 1679592842 1679615321 1680644082
-input_file="1682448988_20250520_161045"
+fname="1689176790"
+input_file="1689176790_20250521_161644"
 
 file_timestamp=$(date +"%Y%m%d_%H%M%S")
 output_dir="/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/level2_${fname}_${file_timestamp}"
-logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level2/logs/job_${file_timestamp}"
+logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level2/logs/job_${fname}_${file_timestamp}"
 mkdir -p ${output_dir}
 mkdir -p ${logs_dir}
 
@@ -34,8 +42,8 @@ for i in {000..063}; do
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=14GB
 #SBATCH --time=48:00:00
-#SBATCH --error=${logs_dir}/job_${fname}_${ant}_%J.err
-#SBATCH --output=${logs_dir}/job_${fname}_${ant}_%J.out
+#SBATCH --error=${logs_dir}/job_${fname}_${ant}${pol}_%J.err
+#SBATCH --output=${logs_dir}/job_${fname}_${ant}${pol}_%J.out
 
 export SINGULARITY_SHELL=/bin/bash" > ${script_name}
 
