@@ -111,6 +111,7 @@ pol=sys.argv[3]
 input_file_name=sys.argv[4]
 recv=ant+pol
 output_file=sys.argv[5] + f'/{fname}_{recv}/'
+print(f'fname = {fname}, recv = {recv}.')
 
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/{input_file_name}/'
 # output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/cali_{file_timestamp}/{fname}_{recv}/'
@@ -124,14 +125,12 @@ if isinstance(target_list, list):
         tag=cal_tag(target)
         tag_list.append(tag)
 else:
-    #print ('same calibrator for track-I/II')
     tag_list=cal_tag(target_list)
-print (tag_list, flush=False)
+print(tag_list, flush=False)
 
 target_start_list=[] #modeified for xcalib
 if isinstance(target_list, list):
     for tag in tag_list:
-        print (tag)
         if tag != '':
             data.select()
             data.select(targets=tag+'_u0.8')
@@ -145,7 +144,7 @@ else:
     data.select(targets=tag_list+'_u0.8')
     target_start_list=data.target_indices[0]
     data.select()
-print (target_start_list)
+print(target_start_list)
 
 ants_good=[]
 for i in np.array(kio.ant_list(data)):
@@ -153,9 +152,7 @@ for i in np.array(kio.ant_list(data)):
         ants_good.append(i)
     else:
         print (str(i) + ' is bad')
-        
-print (fname)
-print (ants_good, flush=False)
+print(ants_good, flush=False)
 
 d={}
 d2={}
@@ -208,12 +205,11 @@ if ant in ants_good:
     #     sys.exit()
     
     channels_cali=list(range(272,2869))+list(range(3133,3547))
-    # channels_cali=list(range(2867,2869))+list(range(3133,3152))
-    # channels_cali=list(range(3170,3230))
+    # channels_cali=list(range(3200,3201))
     # # ----------------------------------------------------------------------------------------- #
 
     nd_on_time,nd_cycle,nd_set=kd.cal_nd_basic_para(fname)
-    print (nd_on_time,nd_cycle,nd_set, flush=False)
+    print(nd_on_time,nd_cycle,nd_set, flush=False)
 
     #load data, labels, and parameters
     ch_ref=3200  #ch3608 is for 1023MHz, but Tnd and Trec models cut at 1015MHz
@@ -223,7 +219,7 @@ if ant in ants_good:
     corr_id=kio.cal_corr_id(data,recv)
     assert(recv==data.corr_products[corr_id][0])
     assert(recv==data.corr_products[corr_id][1])
-    print (corr_id,recv)
+    print(corr_id,recv)
     vis,flags= kio.call_vis(fname,recv)
     vis_backup=vis.copy()
     
@@ -244,17 +240,17 @@ if ant in ants_good:
     az[az>180]-=360
     
     nd_on_edge,nd_off_edge=kd.cal_nd_edges(timestamps,nd_set,nd_cycle,nd_on_time)
-    print (len(nd_on_edge),len(nd_off_edge))
+    print(len(nd_on_edge),len(nd_off_edge))
     nd_ratio,nd_0, nd_1x=kd.cal_nd_ratio(timestamps, nd_on_time, nd_on_edge, dump_period)
     
     # RFI flagging
     #check with .py result
     try:
         d3 = pickle.load(open(input_file+fname+'_'+ant+'/mask2', 'rb'))
-        print ('mask2 loaded')
+        print('mask2 loaded')
     except(Exception):
         d3 = pickle.load(open(input_file+fname+'_'+ant+'/mask', 'rb'))
-        print ('mask loaded')
+        print('mask loaded')
 
     os.makedirs(output_file, exist_ok=True)
         
@@ -298,7 +294,7 @@ if ant in ants_good:
     nside=64 #healpix nside, 64: Mean Spacing (deg) is 0.9161
     #gal_ori=km.cal_Gal_model_np(vis, freqs, ra, dec, ch_plot, ch_plot+1, nside)
     gal_ori=km.cal_Gal_model_np2(vis, freqs, ra, dec, 0, len(freqs), nside, model_key=-1)
-    print ('#Gal model is from Halsam!!!')
+    print('#Gal model is from Halsam!!!')
     gal_ori.flags.writeable=False #avoid change by mistake
     gal=gal_ori.copy()
     
@@ -340,18 +336,24 @@ if ant in ants_good:
     ################################################
     
     for ch_cali in channels_cali:
+        start_time = time.time()
+        print(f'This is channel {ch_cali}.')
 
-        dp_coffa = list(dp_c0a) + list(dp_c2a) + list(dp_c3a) + list(dp_c4a)
-        dp_coffb = list(dp_c0b) + list(dp_c2b) + list(dp_c3b) + list(dp_c4b)
-        judge_1a = np.ma.median(vis_clean[dp_c1a,ch_cali])
-        judge_2a = np.ma.median(vis_clean[dp_coffa,ch_cali])
-        judge_3a = np.ma.median(vis_clean[nd_t1x_ca,ch_cali])
-        judge_4a = np.ma.median(vis_clean[nd_t0_ca,ch_cali])
-        judge_1b = np.ma.median(vis_clean[dp_c1b,ch_cali])
-        judge_2b = np.ma.median(vis_clean[dp_coffb,ch_cali])
-        judge_3b = np.ma.median(vis_clean[nd_t1x_cb,ch_cali])
-        judge_4b = np.ma.median(vis_clean[nd_t0_cb,ch_cali])
-        judges = [judge_1a, judge_2a, judge_3a, judge_4a, judge_1b, judge_2b, judge_3b, judge_4b]
+        judges = []
+        if target_list[0]!='':
+            dp_coffa = list(dp_c0a) + list(dp_c2a) + list(dp_c3a) + list(dp_c4a)
+            judge_1a = np.ma.median(vis_clean[dp_c1a,ch_cali])
+            judge_2a = np.ma.median(vis_clean[dp_coffa,ch_cali])
+            judge_3a = np.ma.median(vis_clean[nd_t1x_ca,ch_cali])
+            judge_4a = np.ma.median(vis_clean[nd_t0_ca,ch_cali])
+            judges.extend([judge_1a, judge_2a, judge_3a, judge_4a])
+        if target_list[-1]!='':
+            dp_coffb = list(dp_c0b) + list(dp_c2b) + list(dp_c3b) + list(dp_c4b)
+            judge_1b = np.ma.median(vis_clean[dp_c1b,ch_cali])
+            judge_2b = np.ma.median(vis_clean[dp_coffb,ch_cali])
+            judge_3b = np.ma.median(vis_clean[nd_t1x_cb,ch_cali])
+            judge_4b = np.ma.median(vis_clean[nd_t0_cb,ch_cali])
+            judges.extend([judge_1b, judge_2b, judge_3b, judge_4b])
         print(f"ch_cali = {ch_cali}, judges = {judges}")
         final_judge = False
         for judge in judges:
@@ -360,7 +362,7 @@ if ant in ants_good:
                 break
     
         check_ratio=float(np.array(vis_clean.mask[:,ch_cali]==False).sum())/len(timestamps)
-        print (ch_cali, check_ratio, flush=False)
+        print(ch_cali, check_ratio, flush=False)
         if check_ratio>check_ratio_limit and not final_judge: #0.6
             try:
        
@@ -381,7 +383,7 @@ if ant in ants_good:
                 #note: diode version are different dish by dish!
                 #Tnd_std,Tnd_ref,noise,Tnd_spl= km.call_Tnd(data, ant, pol,freqs,ch_cali,1) #works but not efficiency
                 Tnd_ref=Tnd_spl(freqs[ch_cali]/1e9)
-                print (Tnd_std,Tnd_ref, flush=False)
+                print('freqs[ch_cali]/1e9 is ', freqs[ch_cali]/1e9)
                 
                 # T_ptr2,pattern,x_pix_max,y_pix_max=kb_u.cal_BMIII_1ch(data,ch_cali,flux_model, dp_ca,dp_cb,pattern_fband,x_pix,y_pix,Aeff_max_fband)
                 if isinstance(target_list, list):
@@ -409,67 +411,43 @@ if ant in ants_good:
                 ####set input parameters
                 # ga0,gb0=ks.cal_gain0(fname,data,ant,pol,flags,ch_cali,dp_tt,dp_ss,ang_deg,T_ptr,vis_clean,n_src_off=4,target_start=target_start_list) #gain level ##need to check the label still works for 2021 data!!!!!!
                 ga0,gb0=ks.cal_gain0(fname,data,ant,pol,flags,ch_cali,dp_tt,dp_ss,ang_deg,T_ptr,vis_clean,n_src_off=4,target_start=target_start_list)
-                print (ga0,gb0, flush=False)
                 assert(isinstance(ga0,np.float))
                 assert(isinstance(gb0,np.float))
                 
                 Trec0=Trec_list[ch_cali]
                 
                 if target_list[0]!='':
-                    print (Trec0)
                     eta_p0=1.0
                     func_sm_param0=[Trec0]
                     func_gt_param0=[ga0,0,0,0,0]
-                    print(np.mean(timestamps), np.std(timestamps))
-                    print(np.ma.mean(visa_ptr), np.ma.std(visa_ptr))
-                    print(ch_cali, eta_p0, Tnd_ref, Tnd_std)
-                    print(np.ma.mean(nd_ratio), np.ma.std(nd_ratio))
-                    print(np.ma.mean(T_ptr), np.ma.std(T_ptr))
-                    print(np.ma.mean(Tel), np.ma.std(Tel))
-                    print(np.ma.mean(Tgal), np.ma.std(Tgal))
-                    print(func_gt_param0)
-                    print(func_sm_param0)
-                    print(np.ma.mean(nd_0), np.ma.std(nd_0))
-                    print(np.mean(nd_1x), np.std(nd_1x))
-                    print(np.mean(dp_ca), np.std(dp_ca))
-                    print(np.ma.mean(vis_clean), np.ma.std(vis_clean))
-                    print (Tnd_ref, 11111, flush=False)
                     ####fitting
                     instru_pa=ks.solve_params0_v3(timestamps, visa_ptr, ch_cali, nd_ratio, T_ptr, eta_p0, Tnd_ref, Tnd_std, Tel, Tgal, func_gt_param0, func_sm_param0, nd_0, nd_1x, band='UHF')
                     ####get fitting result
-                    print(22222, flush=False)
                     Tnda=instru_pa[0]
                     eta_pa=instru_pa[1]
                     sma=instru_pa[2]
                     gta=instru_pa[3:]
-                    print (Tnda, eta_pa, sma, gta, 33333, flush=False)
 
                     m1=ks.calc_total_model_v3(timestamps, nd_ratio, T_ptr, eta_pa, Tnda, Tel, Tgal, gta, sma, nd_0, nd_1x)
                     ma=np.ma.array(m1,mask=visa_ptr[:,ch_cali].mask)    
                     ga=ks.func_gt(timestamps,gta)
                     resia=(visa_ptr[:,ch_cali]-ma)/ga
 
+                    print('params:', np.mean(timestamps), np.ma.mean(visa_ptr), ch_cali, np.mean(nd_ratio), T_ptr[300], eta_p0, Tnd_ref, Tnd_std, np.mean(Tel), np.mean(Tgal), func_gt_param0, func_sm_param0, np.mean(nd_0), np.mean(nd_1x))
+
                 if target_list[-1]!='':
                     ####set input parameters
-                    #Trec0=Trec_list[ch_plot]
-                    print (Trec0, flush=False)
                     eta_p0=1.0
                     func_sm_param0=[Trec0]
-                    func_gt_param0=[gb0,0,0,0,0]
-                    
-                    print (Tnd_ref, flush=False)
-                    
+                    func_gt_param0=[gb0,0,0,0,0]    
                     ####fitting######
                     instru_pb=ks.solve_params0_v3(timestamps, visb_ptr, ch_cali, nd_ratio, T_ptr, eta_p0, Tnd_ref, Tnd_std, Tel, Tgal,
                                           func_gt_param0, func_sm_param0, nd_0, nd_1x, band='UHF')
-                    print(f"ch_cali = {ch_cali}, Tnd_ref = {Tnd_ref}",)
-                    
                     ######get fitting result#####
                     Tndb=instru_pb[0]
                     eta_pb=instru_pb[1]
                     smb=instru_pb[2]
                     gtb=instru_pb[3:]
-                    print (Tndb, eta_pb, smb, gtb, flush=False)
 
                     m2=ks.calc_total_model_v3(timestamps, nd_ratio, T_ptr, eta_pb, Tndb, Tel, Tgal, gtb, smb, nd_0, nd_1x)
                     mb=np.ma.array(m2,mask=visb_ptr[:,ch_cali].mask)
@@ -556,14 +534,14 @@ if ant in ants_good:
                     #plt.show()
                 
                 
-                print ('Tnd_ref: ', Tnd_ref)
+                print('Tnd_ref: ', Tnd_ref)
                 ####data need to storage######
                 Tnd_ref_list[ch_cali]=Tnd_ref
                 if target_list[0]!='':
-                    print ('Tnda: ', Tnda)
+                    print('Tnda: ', Tnda)
 
                     NRMSE1=ks.cal_NRMSE(ma/ga,resia)
-                    print ('NRMSE1 =', NRMSE1)
+                    print('NRMSE1 =', NRMSE1)
 
                     if Tnda>0 and Tnda<100:
                         Tnda_list[ch_cali]=Tnda
@@ -579,10 +557,10 @@ if ant in ants_good:
                     sma_param[ch_cali]=sma
                     
                 if target_list[-1]!='':
-                    print ('Tndb: ', Tndb)
+                    print('Tndb: ', Tndb)
 
                     NRMSE2=ks.cal_NRMSE(mb/gb,resib)
-                    print ('NRMSE2 =', NRMSE2)
+                    print('NRMSE2 =', NRMSE2)
 
                     if Tndb>0 and Tndb<100:
                         Tndb_list[ch_cali]=Tndb
@@ -598,16 +576,16 @@ if ant in ants_good:
                     smb_param[ch_cali]=smb
                     
                 if target_list[0]!='' and target_list[-1]!='':
-                    print ('average: ', (Tnda+Tndb)/2.)
+                    print('average: ', (Tnda+Tndb)/2.)
                     Tnd_diff_ratio=abs(Tnda-Tndb)/np.max([Tnda,Tndb])
-                    print ('Tnd_diff_ratio:', str(round(Tnd_diff_ratio*100,2)),'%')
+                    print('Tnd_diff_ratio:', str(round(Tnd_diff_ratio*100,2)),'%')
 
                     if Tnda >0 and Tndb >0 and Tnda<100 and Tndb<100:
                         Tnd_diff_ratio_list[ch_cali]=Tnd_diff_ratio
                 
                 Tel_map[:,ch_cali]=Tel
                 
-                print (ch_cali, Tnd_ref, Tnda, Tndb)
+                print(ch_cali, Tnd_ref, Tnda, Tndb)
 
                 if ch_cali%50==0:
                     #d={}
@@ -644,20 +622,32 @@ if ant in ants_good:
                     pickle.dump(d2,fs,protocol=2)
                     fs.close()
 
-                print ('***channel '+ str(ch_cali) +' finished')    
+                # --------------------------------------------------------------- #
+                with open(output_file+'level2_data', 'rb') as f:
+                    d_r = pickle.load(f)
+                gain_map1=d_r['gain_map']
+                print(f'gain_map1[dp_ca[0], 3200] is {gain_map1[dp_ca[0], 3200]}')
+                # --------------------------------------------------------------- #
+
+                print('***channel '+ str(ch_cali) +' finished')    
                 count_ch+=1
 
             except Exception as error:
                 print("An error occurred:", error) 
-                print ('***channel '+ str(ch_cali) +' failed...')
-                print (np.shape(data))
+                print('***channel '+ str(ch_cali) +' failed...')
+                print(np.shape(data))
                 data.select()
                 data.select(ants=ant,pol=pol)
-                print (np.shape(data))
-                print ('data reset applied.')
+                print(np.shape(data))
+                print('data reset applied.')
         else:
-            print ('***channel '+ str(ch_cali) +' skipped')   
-        print(11111, flush=False)
+            print('***channel '+ str(ch_cali) +' skipped')
+
+        end_time = time.time()
+        tt = end_time - start_time
+        print(f'channel {ch_cali} spent {tt:.2f} seconds.')
+        if ch_cali % 500 == 0:
+            print(flush=True)
             
     ####save data####
     #d={}
@@ -748,7 +738,7 @@ else:
         json.dump(metadata, f, indent=4)
     print ('***BAD ANT, Level2 calibartion for '+fname+' '+ant+pol+' skipped')
     print ('end @ ' + time.asctime(time.localtime(time.time())) +'#')
-print ('Hakuna Matata') 
+print ('Hakuna Matata')
 ################################################
 #### Jingying Wang <astro.jywang@gmail.com> ####
 ################################################

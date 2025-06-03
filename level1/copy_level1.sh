@@ -1,8 +1,8 @@
 #!/bin/bash
 
-fname=1679592842
+fname=1675643846
 
-dir="./results/py_results/clean_20250311_144739"
+dir="./results/py_results/1675643846_20250521_161643"
 
 #mkdir -p ./results/py_results/scheme1/1684087370/ratio_imgs/  # 创建目标目录（如果不存在）
 

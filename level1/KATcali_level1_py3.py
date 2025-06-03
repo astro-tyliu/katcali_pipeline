@@ -86,9 +86,6 @@ plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.l
 p_radec=np.loadtxt('radio_source_fsky.txt')
 # ra_a4059,dec_a4059=-0.74042,-34.76056
 
-# scheme1: 保存所有数据
-# scheme2: 保存同一block同一天线不同threshold下的map2.png
-# scheme3: 保存同一block同一threshold不同天线下的map2.png
 if len(sys.argv) == 1:
     # default: '1675632179', 'm060'
     sys.argv.extend(['1675632179', 'm060', '8.', '4.', '16.', '8.', '00000000_000000'])
