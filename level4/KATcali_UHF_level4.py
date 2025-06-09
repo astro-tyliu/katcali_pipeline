@@ -54,8 +54,7 @@ p_radec=np.loadtxt('radio_source_fsky.txt')
 
 #input_file='/idia/projects/hi_im/raw_vis/MeerKLASS2021/level3/data/'
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/{input_file3_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/level4_{file_timestamp}/{fname}_{ant}/'
-os.makedirs(output_file, exist_ok=True)
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/level4_{fname}_{file_timestamp}/{fname}_{ant}/'
 
 def cal_map_I(map_h, map_v):    
     assert(np.shape(map_h)==np.shape(map_v))
@@ -70,6 +69,7 @@ def cal_map_I(map_h, map_v):
 try:
     dh=pickle.load(open(input_file+fname+'_'+ant+'h/level3_data','rb'), encoding='latin-1')
     dv=pickle.load(open(input_file+fname+'_'+ant+'v/level3_data','rb'), encoding='latin-1')
+    os.makedirs(output_file, exist_ok=True)
 
     assert((dh['ra']==dv['ra']).all()==True)
     assert((dh['dec']==dv['dec']).all()==True)
@@ -108,7 +108,7 @@ try:
     freqs=kio.cal_freqs_UHF(range(4096))
     freqs = np.array(freqs)
 
-    ch_e=1051
+    ch_e=2869
     
     assert((T_map_h.mask==Tresi_map_h.mask).all()==True)
     assert((T_map_v.mask==Tresi_map_v.mask).all()==True)
@@ -138,28 +138,29 @@ try:
         for l_i in range(len(l)):
             a=l[l_i]
             a_ch=np.ma.mean(np.ma.array(a,mask=mask_clean),axis=0)
+            # Following is the RFI removing process for each sub-band, which is different for different bands
             try:
-                ax1=kf.curve_filter_ma_array(range(550,1051),a_ch[550:1051],sigma=sigma)#550-1050 filter
+                ax1=kf.curve_filter_ma_array(range(272,2869),a_ch[272:2869],sigma=sigma)#272-2868 filter
                 mask_clean2[:,ax1]=True ###apply to the mask
                 del_point+=list(ax1)
             except:
                 ax1=[]
-                print ('* 550-1050 filter not applied')
+                print('* 272-2869 filter not applied')
             #'''
             try:
-                ax2=kf.curve_filter_ma_array(range(2150,3101),a_ch[2150:3101],sigma=sigma)#2150-3100 filter
+                ax2=kf.curve_filter_ma_array(range(3133,3547),a_ch[3133:3547],sigma=sigma)#3133-3546 filter
                 mask_clean2[:,ax2]=True ###apply to the mask
                 del_point+=list(ax2)
             except:
                 ax2=[]
-                print ('* 2150-3100 filter not applied')
+                print('* 3133-3547 filter not applied')
             try:
-                ax3=kf.curve_filter_ma_array(range(550,3101),a_ch[550:3101],sigma=sigma,k=1)
+                ax3=kf.curve_filter_ma_array(range(272,3547),a_ch[272:3547],sigma=sigma,k=1)
                 mask_clean2[:,ax3]=True ###apply to the mask
                 del_point+=list(ax3)
             except:
                 ax3=[]
-                print ('* 550-3100 filter not applied')
+                print('* 272-3547 filter not applied')
             #'''
             if l_i==0:
                 del_point0+=list(ax1)+list(ax2)+list(ax3)
@@ -273,28 +274,28 @@ try:
     plt.figure(figsize=(14,5.4))
     #plt.subplots_adjust (wspace=0.2, hspace=0) 
     plt.subplot(121)
-    plt.imshow(Tsky_map[:,550:3101],aspect='auto',extent=(freqs[550]/1e6,freqs[3101]/1e6,len(timestamps)*2,0))
+    plt.imshow(Tsky_map[:,272:3547],aspect='auto',extent=(freqs[272]/1e6,freqs[3547]/1e6,len(timestamps)*2,0))
     plt.xlabel('Frequency (MHz)')
     plt.ylabel('time (s)')
-    #plt.xlim(550,ch_e)
+    #plt.xlim(272,ch_e)
     if fname=='1551055211':
         plt.title('$I_{sky}$, '+ant+' of obs190225', y=1.15)
     clb = plt.colorbar()
     clb.set_label('Kelvin', labelpad=-35, y=1.06, rotation=0, fontsize=12)
     plt.twiny()
-    plt.imshow(Tsky_map[:,550:3101], aspect='auto',extent=(550,3101,len(timestamps)*2,0))
+    plt.imshow(Tsky_map[:,272:3547], aspect='auto',extent=(272,3547,len(timestamps)*2,0))
     plt.xlabel('channel')
     plt.subplot(122)
-    plt.imshow(Tresi_map[:,550:3101],aspect='auto',vmax=0.3, extent=(freqs[550]/1e6,freqs[3101]/1e6,len(timestamps)*2,0))
+    plt.imshow(Tresi_map[:,272:3547],aspect='auto',vmax=0.3, extent=(freqs[272]/1e6,freqs[3547]/1e6,len(timestamps)*2,0))
     plt.xlabel('Frequency (MHz)')
     plt.ylabel('time (s)')
-    #plt.xlim(550,ch_e)
+    #plt.xlim(272,ch_e)
     if fname=='1551055211':
         plt.title('$I_{resi}$, '+ant+' of obs190225', y=1.15)
     clb = plt.colorbar()
     clb.set_label('Kelvin', labelpad=-45, y=1.06, rotation=0, fontsize=12)
     plt.twiny()
-    plt.imshow(Tresi_map[:,550:3101], aspect='auto',vmax=0.3, extent=(550,3101,len(timestamps)*2,0))
+    plt.imshow(Tresi_map[:,272:3547], aspect='auto',vmax=0.3, extent=(272,3547,len(timestamps)*2,0))
     plt.xlabel('channel')
     plt.savefig(output_file+'F_'+fname+'_'+ant+'_Inten.png', bbox_inches='tight')
     #plt.show()
@@ -365,18 +366,19 @@ try:
         json.dump(metadata, f, indent=4)
 
 except IOError:
-    metadata = {
-        "parameters": {
-            "fname": fname,
-            "ant": ant,
-            "level3_input_file": input_file3_name,
-            "file_timestamp": file_timestamp
-        },
-        "description": '### failed for '+fname+', '+ant
-    }
-    metadata_path = os.path.join(output_file, f"metadata.json")
-    with open(metadata_path, "w") as f:
-        json.dump(metadata, f, indent=4)
+    if os.path.exists(output_file):
+        metadata = {
+            "parameters": {
+                "fname": fname,
+                "ant": ant,
+                "level3_input_file": input_file3_name,
+                "file_timestamp": file_timestamp
+            },
+            "description": '### failed for '+fname+', '+ant
+        }
+        metadata_path = os.path.join(output_file, f"metadata.json")
+        with open(metadata_path, "w") as f:
+            json.dump(metadata, f, indent=4)
     print ('### failed for '+fname+', '+ant)
 
 print ('end @ ' + time.asctime(time.localtime(time.time())) +'#')

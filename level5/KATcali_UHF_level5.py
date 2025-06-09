@@ -52,18 +52,23 @@ fname=sys.argv[1] #'1634252028'
 ant=sys.argv[2] #'m001'
 input_file4_name = sys.argv[3]
 file_timestamp = sys.argv[4]
-print (fname, ant, input_file4_name, file_timestamp)
+#set the sky area to be pixelized 
+x_cen = float(sys.argv[5]) #deg #RA
+x_half = float(sys.argv[6]) #deg
+y_cen = float(sys.argv[7]) #deg #DEC
+y_half = float(sys.argv[8]) #deg
+print(fname, ant, input_file4_name, file_timestamp, x_cen, x_half, y_cen, y_half)
 
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/{input_file4_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level5/py_results/level5_{file_timestamp}/{fname}_{ant}/'
-os.makedirs(output_file, exist_ok=True)
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level5/py_results/level5_{fname}_{file_timestamp}/{fname}_{ant}/'
 
 p_radec=np.loadtxt('radio_source_fsky.txt')
 
 ch_plot=3200
 
 d1=pickle.load(open(input_file+fname+'_'+ant+f'/{fname}_{ant}_level4_data','rb'), encoding='latin-1')
-print (d1.keys())
+print(d1.keys())
+os.makedirs(output_file, exist_ok=True)
 
 ra=d1['ra']
 dec=d1['dec']
@@ -75,13 +80,6 @@ freqs=kio.cal_freqs_UHF(range(4096))
 freqs = np.array(freqs)
 
 plot_gsize=90
-
-#set the sky area to be pixelized 
-x_cen=168 #deg #RA
-x_half=28 #deg
-
-y_cen=-4#deg #DEC
-y_half=12#deg
 
 pix_deg=0.3
 

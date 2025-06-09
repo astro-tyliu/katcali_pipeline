@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 #imports
+import os
 import katdal
 import numpy as np
 import matplotlib.pylab as plt
@@ -15,7 +16,6 @@ from astropy import units as u
 from matplotlib.offsetbox import AnchoredText
 import time
 import json
-import os
 import pickle
 import sys
 Tcmb=2.725
@@ -51,12 +51,11 @@ input_file1_name=sys.argv[4]
 input_file2_name=sys.argv[5]
 file_timestamp=sys.argv[6]
 recv=ant+pol
-ch_ref=3300
+ch_ref=3200
 
 input_file1=f'/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/{input_file1_name}/'
 input_file2=f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/{input_file2_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/cali_{file_timestamp}/{fname}_{recv}/'
-os.makedirs(output_file, exist_ok=True)
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/level3_{fname}_{file_timestamp}/{fname}_{recv}/'
 
 d2=pickle.load(open(input_file2+fname+'_'+str(recv)+'/level2_Tnd_data','rb'),encoding='latin-1')
 print(d2.keys())
@@ -64,6 +63,8 @@ Tnd_ref_list=d2['Tnd_ref_list']
 Tnda_list=d2['Tnda_list']
 Tndb_list=d2['Tndb_list']
 Tnd_diff_ratio_list=d2['Tnd_diff_ratio_list']
+NRMSE1_list = d2['NRMSE1_list']
+NRMSE2_list = d2['NRMSE2_list']
 
 Tnda_list=np.array(Tnda_list,dtype=np.float64)
 Tnda_list=np.ma.masked_invalid(Tnda_list)
@@ -71,13 +72,18 @@ Tndb_list=np.array(Tndb_list,dtype=np.float64)
 Tndb_list=np.ma.masked_invalid(Tndb_list)
 Tnd_diff_ratio_list=np.array(Tnd_diff_ratio_list,dtype=np.float64)
 Tnd_diff_ratio_list=np.ma.masked_invalid(Tnd_diff_ratio_list)
+NRMSE1_list=np.array(NRMSE1_list,dtype=np.float64)
+NRMSE1_list=np.ma.masked_invalid(NRMSE1_list)
+NRMSE2_list=np.array(NRMSE2_list,dtype=np.float64)
+NRMSE2_list=np.ma.masked_invalid(NRMSE2_list)
 
 Tnd_list=np.ma.mean([Tnda_list,Tndb_list],axis=0)
 
 data=kio.load_data(fname)
 
 #show the calibrator and bad ants information
-target,c0,bad_ants,flux_model=kio.check_ants(fname)
+# target,c0,bad_ants,flux_model=kio.check_ants(fname)
+target_list,c0_list,bad_ants,flux_model_list=kio.check_ants(fname)
 
 ants_good=[]
 for i in np.array(kio.ant_list(data)):
@@ -89,7 +95,19 @@ for i in np.array(kio.ant_list(data)):
 print (fname)
 print (ants_good)
 
+# desi1_list = ['1678743988', '1682448988', '1678295187', '1676313206', '1677020482', '1675643846', '1678122565', '1676657789', '1677777992', '1675623808', '1677002481', '1677195529', '1684087370', '1675210948', '1678726283', '1678467685', '1679605292', '1677174749', '1678381591', '1675021905', '1677795989', '1678899080', '1675816512', '1675106912']
+# desi2_list = ['1679592842', '1678734987', '1689003684', '1689176790', '1688399183', '1677183387', '1679247986', '1677011008', '1680626188', '1681143685', '1680798562', '1683492604', '1681920680', '1685641589', '1675632179', '1679419886', '1689090392', '1684781618', '1679615321', '1679333668', '1680644082', '1681229848']
+# if fname in desi1_list:
+#     classify_dir = '/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/imgs_desi1/'
+# elif fname in desi2_list:
+#     classify_dir = '/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/imgs_desi2/'
+# tmp = os.listdir(classify_dir + 'good/' + input_file2_name + '/')
+# level2_good = [f[8:13] for f in tmp if f.endswith('.png')]
+# print('good receivers in level 2: ', level2_good)
+# del tmp
+
 if ant in ants_good:
+# if recv in level2_good:
     
     data.select(ants=ant,pol=pol)
     
@@ -103,7 +121,12 @@ if ant in ants_good:
     ra,dec,az,el=kio.load_coordinates(data)
     timestamps,freqs=kio.load_tf(data)
     dump_period=data.dump_period
-    ang_deg=kio.load_ang_deg(ra,dec,c0)
+    # ang_deg=kio.load_ang_deg(ra,dec,c0)
+    if isinstance(target_list, list):
+        ang_deg=kio.load_ang_deg2(ra,dec,c0_list)
+    else:
+        ang_deg=kio.load_ang_deg(ra,dec,c0_list) #modeified for xcalib
+    ang_deg=np.array(ang_deg)
     dp_tt,dp_ss,dp_f,dp_w, dp_t,dp_s,dp_slew,dp_stop=kl.cal_dp_label(data,flags,ant,pol,ch_ref,ang_deg)
     dp_sb,dp_se=dp_ss[0],dp_ss[-1]
     
@@ -161,20 +184,47 @@ if ant in ants_good:
     Tel_map=np.ma.array(np.zeros_like(vis),mask=True)
 
     channels_cali = list(range(272,2869))+list(range(3133,3547))
-    # channels_cali = list(range(3270,3330))
-    Tnd_diff_ratio_limit = 0.08
+    
+    if isinstance(target_list, str):
+        target_list = [target_list, target_list]
+
+    Tnd_diff_ratio_limit = None
+    NRMSE_limit = None
+    if target_list[0] == target_list[-1]:
+        Tnd_diff_ratio_limit = 0.05
+    elif target_list[0] == '' or target_list[-1] == '':
+        NRMSE_limit = 0.004
+    else:
+        Tnd_diff_ratio_limit = 0.05
     
     ch_count=0
     
     d={}
-    #####################################   
+    #####################################
     
+    os.makedirs(output_file, exist_ok=True)
     for ch_plot in channels_cali:
+
+        if target_list[0] == '':
+            NRMSE2 = NRMSE2_list[ch_plot]
+            print('target_list: ', target_list)
+            print('NRMSE_limit: ', NRMSE_limit)
+            print('NRMSE2: ', NRMSE2)
+            judge = NRMSE2 < NRMSE_limit
+        elif target_list[-1] == '':
+            NRMSE1 = NRMSE1_list[ch_plot]
+            print('target_list: ', target_list)
+            print('NRMSE_limit: ', NRMSE_limit)
+            print('NRMSE1: ', NRMSE1)
+            judge = NRMSE1 < NRMSE_limit
+        else:
+            Tnd_diff_ratio=Tnd_diff_ratio_list[ch_plot]
+            print('target_list: ', target_list)
+            print('Tnd_diff_ratio_limit: ', Tnd_diff_ratio_limit)
+            print('Tnd_diff_ratio: ', Tnd_diff_ratio)
+            judge = Tnd_diff_ratio < Tnd_diff_ratio_limit
         
-        Tnd_diff_ratio=Tnd_diff_ratio_list[ch_plot]
-        print ('Tnd_diff_ratio:', Tnd_diff_ratio)
-        
-        if Tnd_diff_ratio<Tnd_diff_ratio_limit:
+        if judge:
     
             try:
     
@@ -267,6 +317,7 @@ if ant in ants_good:
         },
         "ch_ref": ch_ref,
         "Tnd_diff_ratio_limit": Tnd_diff_ratio_limit,
+        "NRMSE_limit": NRMSE_limit,
         "channels_cali": channels_cali,
         "description": '### '+recv+' of '+fname+' finished successfully ###'
     }
