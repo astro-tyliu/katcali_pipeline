@@ -1,77 +1,36 @@
 #! /bin/bash
 
-# desi 1
-# 1675623808 1675623808_20250521_161644 level2_1675623808_20250522_183555
-# 1675643846 1675643846_20250521_161643 level2_1675643846_20250522_183555
-# 1676313206 1676313206_20250520_161045 level2_1676313206_20250523_164748
-# 1678295187 1678295187_20250520_161045 level2_1678295187_20250523_164849
-# 1678743988 1678743988_20250520_161045 level2_1678743988_20250523_165044
-# 1675210948 1675210948_20250521_161644 level2_1675210948_20250522_183454
-# 1682448988 1682448988_20250520_161045 level2_1682448988_20250523_165435
-# 1677020482 1677020482_20250521_161644 level2_1677020482_20250523_165911
-# 1678122565 1678122565_20250521_161644 level2_1678122565_20250523_170059
-# 1676657789 1676657789_20250521_161644 level2_1676657789_20250524_050804
-# 1677777992 1677777992_20250521_161644 level2_1677777992_20250526_175801
-# 1677002481 1677002481_20250521_161644 level2_1677002481_20250526_175923
-# 1677195529 1677195529_20250521_161644 level2_1677195529_20250528_174010
-# 1684087370 1684087370_20250521_161644 level2_1684087370_20250528_174153
-# 1678726283 1678726283_20250528_164604 level2_1678726283_20250528_174153
-# 1678467685 1678467685_20250521_161644 level2_1678467685_20250530_150604
-# 1679605292 1679605292_20250521_161644 level2_1679605292_20250530_150634
-# 1677174749 1677174749_20250521_161644 level2_1677174749_20250530_150634
-# 1678381591 1678381591_20250521_161644 level2_1678381591_20250530_150634
-# 1675021905 1675021905_20250521_161644 level2_1675021905_20250530_150705
-# 1677795989 1677795989_20250521_161644 level2_1677795989_20250530_150706
-# 1678899080 1678899080_20250528_164637 level2_1678899080_20250530_150707
-# 1675816512 1675816512_20250521_161644 level2_1675816512_20250530_150739
-
-# desi 2
-# 1677183387 1677183387_20250521_161644 level2_1677183387_20250528_095437  # No first track part
-
-# 1675632179 1675632179_20250521_161644 level2_1675632179_20250522_183555
-# 1679247986 1679247986_20250521_161644 level2_1679247986_20250526_175901
-# 1680626188 1680626188_20250521_161644 level2_1680626188_20250526_175912
-# 1689176790 1689176790_20250521_161644 level2_1689176790_20250523_170250
-# 1677011008 1677011008_20250521_102107 level2_1677011008_20250527_131203
-# 1678734987 1678734987_20250528_164637 level2_1678734987_20250528_174227
-# 1689003684 1689003684_20250528_164713 level2_1689003684_20250528_174229
-# 1688399183 1688399183_20250521_161644 level2_1688399183_20250526_175833
-# 1681143685 1681143685_20250521_161644 level2_1681143685_20250527_165715
-# 1680798562 1680798562_20250521_161644 level2_1680798562_20250527_165732
-# 1683492604 1683492604_20250521_161644 level2_1683492604_20250527_165831
-# 1681920680 1681920680_20250521_161644 level2_1681920680_20250527_165847
-# 1685641589 1685641589_20250521_161644 level2_1685641589_20250528_174229
-
+# file_timestamp=$(date +"%Y%m%d_%H%M%S")
+file_timestamp="20250609_150000"
 
 # Assign input parameters to variables
-sed -n '1001,1200p' result_level2_list.txt | while read line
+# sed -n '1301,1600p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi1_result_sort.txt | while read line  # 1248
+sed -n '1001,1115p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi2_result_sort.txt | while read line
 
 do
     fname=`echo $line | awk '{print $1}'`
     ant=`echo $line | awk '{print $2}'`
-    pol=`echo $line | awk '{print $3}'`
-    
-    input_line=$(grep "^${fname} " desi1_fname_mapping.txt)
+    # input_line=$(grep "^${fname} " /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/desi1_fname_mapping.txt)
+    input_line=$(grep "^${fname} " /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/desi2_fname_mapping.txt)
     input_file1=$(echo $input_line | awk '{print $2}')
     input_file2=$(echo $input_line | awk '{print $3}')
-    
     echo "block name: $fname"
     echo "Input file 1: $input_file1"
     echo "Input file 2: $input_file2"
     
-    echo ${fname} ${ant} ${pol}
-    
-    # file_timestamp=$(date +"%Y%m%d_%H%M%S")
-    file_timestamp="20250608_100000"
-    output_dir="/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/level3_${fname}_${file_timestamp}"
-    logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level3/logs/job_${fname}_${file_timestamp}"
-    mkdir -p ${output_dir}
-    mkdir -p ${logs_dir}
-    
-    echo "${fname} ${ant} ${pol}"
-    
-    script_name="level3_${fname}_${ant}_${pol}"
-    echo "#! /bin/bash
+    for pol in h v
+    do   
+        echo ${fname} ${ant} ${pol}
+        
+        output_dir="/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/level3_${fname}_${file_timestamp}"
+        logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level3/logs/job_${fname}_${file_timestamp}"
+        mkdir -p ${output_dir}
+        mkdir -p ${logs_dir}
+        
+        echo "${fname} ${ant} ${pol}"
+        
+        script_name="level3_${fname}_${ant}_${pol}"
+        echo "#! /bin/bash
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=12GB
 #SBATCH --time=36:00:00
@@ -79,15 +38,16 @@ do
 #SBATCH --output=${logs_dir}/job_${fname}_${ant}${pol}_%J.out
 #SBATCH --exclude=compute-103
     
-    export SINGULARITY_SHELL=/bin/bash" > ${script_name}
-    
-    # export SINGULARITY_SHELL=/bin/bash" > sub_${fname}_${ant}_${pol}
-    
-    echo "singularity exec /data/exp_soft/containers/katcal.sif ./KATcali_UHF_level3.py ${fname} ${ant} ${pol} ${input_file1} ${input_file2} ${file_timestamp}" >> ${script_name}
-    sbatch ${script_name}
-    
-    # sbatch sub_${fname}_${ant}_${pol}
-    
-    rm -f ${script_name}
-    # rm -f sub_${fname}_${ant}_${pol}
+        export SINGULARITY_SHELL=/bin/bash" > ${script_name}
+        
+        # export SINGULARITY_SHELL=/bin/bash" > sub_${fname}_${ant}_${pol}
+        
+        echo "singularity exec /data/exp_soft/containers/katcal.sif ./KATcali_UHF_level3.py ${fname} ${ant} ${pol} ${input_file1} ${input_file2} ${file_timestamp}" >> ${script_name}
+        sbatch ${script_name}
+        
+        # sbatch sub_${fname}_${ant}_${pol}
+        
+        rm -f ${script_name}
+        # rm -f sub_${fname}_${ant}_${pol}
+    done
 done

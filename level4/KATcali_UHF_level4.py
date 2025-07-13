@@ -52,9 +52,10 @@ print(fname,ant)
 
 p_radec=np.loadtxt('radio_source_fsky.txt')
 
+sigma = 4.
 #input_file='/idia/projects/hi_im/raw_vis/MeerKLASS2021/level3/data/'
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/{input_file3_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/level4_{fname}_{file_timestamp}/{fname}_{ant}/'
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/sigma{int(sigma*10)}/level4_{fname}_{file_timestamp}/{fname}_{ant}/'
 
 def cal_map_I(map_h, map_v):    
     assert(np.shape(map_h)==np.shape(map_v))
@@ -134,7 +135,7 @@ try:
 
         del_point=[]
 
-        sigma = 4.
+        # sigma = 4.
         for l_i in range(len(l)):
             a=l[l_i]
             a_ch=np.ma.mean(np.ma.array(a,mask=mask_clean),axis=0)

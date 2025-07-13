@@ -1,7 +1,3 @@
-################################################
-#### Jingying Wang <astro.jywang@gmail.com> ####
-###############################################
-#imports
 import katdal
 import numpy as np
 import matplotlib
@@ -12,18 +8,17 @@ import functools
 import healpy as hp
 import optparse
 import warnings
-from matplotlib.backends.backend_pdf import PdfPages
-import matplotlib.gridspec as gridspec
-import healpy as hp
-from astropy import units as u
-from matplotlib.offsetbox import AnchoredText
-from matplotlib.colors import LogNorm
 import time
 import pickle
 import sys
 import os
 import gc
-Tcmb=2.725
+
+from matplotlib.offsetbox import AnchoredText
+from matplotlib.colors import LogNorm
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+
 import katcali
 import katcali.visualizer as kv
 import katcali.models as km
@@ -34,115 +29,122 @@ import katcali.label_dump as kl
 import katcali.diode as kd
 import katcali.filter as kf
 import katcali.beam_UHF as kb_u
-from astropy.coordinates import SkyCoord
-from astropy import units as u
 
+Tcmb = 2.725
+
+# Input arguments
 cali_output = sys.argv[1]
 fname = sys.argv[2]
 
-cali_output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/{cali_output}/'
-output_file1 = cali_output_file + 'waterfall/'
-output_file2 = cali_output_file + 'mean_std/'
+# Output paths
+cali_output_file = f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/{cali_output}/'
+output_file1 = os.path.join(cali_output_file, 'waterfall')
+output_file2 = os.path.join(cali_output_file, 'mean_std')
 os.makedirs(output_file1, exist_ok=True)
 os.makedirs(output_file2, exist_ok=True)
-num_ants = 10
 
+# Constants
+num_ants = 64
 pols = ['h', 'v']
-# ch_plots = [800, 1300, 1800, 2300, 3300]
 ch_plots = [300, 2800, 3200, 3500]
 ch_ref = 3200
 
-print ('start @ ' + time.asctime(time.localtime(time.time())) +'#')
-print (katcali.__version__)
-print  (plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'], plt.rcParams['lines.linewidth'])
-plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'] = 14, 1.5, 1.5
-#plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'] = 10.0, 0.8, 1.5
-print  (plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'], plt.rcParams['lines.linewidth'])
+# Logging
+print('Start @', time.asctime())
+print('katcali version:', katcali.__version__)
+
+# Set plotting parameters
+plt.rcParams['font.size'] = 14
+plt.rcParams['axes.linewidth'] = 1.5
+plt.rcParams['lines.linewidth'] = 1.5
 
 ants = [f'm{i:03d}' for i in range(num_ants)]
-map_mean_std = np.ma.array(np.zeros((3, len(ch_plots), num_ants, len(pols))), mask=True)
-resi_mean_std = np.ma.array(np.zeros((3, len(ch_plots), num_ants, len(pols))), mask=True)
 
-for i, ant in enumerate(ants):
-    
-    for j, pol in enumerate(pols):
-        
-        recv = ant+pol
+# Loop over receivers
+for ant in ants:
+    for pol in pols:
+        recv = ant + pol
+        data_path = os.path.join(cali_output_file, f'{fname}_{recv}', 'level3_data')
+
+        if not os.path.exists(data_path):
+            print(f'{recv}: level3_data not found')
+            continue
+
         try:
-            with open(cali_output_file + str(fname) + '_' + str(recv) + '/level3_data', 'rb') as f:
+            with open(data_path, 'rb') as f:
                 dd = pickle.load(f)
         except Exception as e:
-            print(f'{ant}: {e}')
+            print(f'{recv}: {e}')
             continue
-        
-        data = kio.load_data(fname)
-        #show the calibrator and bad ants information
-        # target, c0, bad_ants, flux_model = kio.check_ants(fname)
-        target_list,c0_list,bad_ants,flux_model_list=kio.check_ants(fname)
-        data.select(ants=ant,pol=pol)
 
-        vis,flags = kio.call_vis(fname,recv)
-        vis_backup = vis.copy()
-        ra, dec, az, el = kio.load_coordinates(data)
-        timestamps, freqs = kio.load_tf(data)
-        dump_period = data.dump_period
-        # ang_deg = kio.load_ang_deg(ra, dec, c0)
-        if isinstance(target_list, list):
-            ang_deg=kio.load_ang_deg2(ra,dec,c0_list)
-        else:
-            ang_deg=kio.load_ang_deg(ra,dec,c0_list) #modeified for xcalib
-        ang_deg=np.array(ang_deg)
-        dp_tt, dp_ss, dp_f, dp_w, dp_t, dp_s, dp_slew, dp_stop = kl.cal_dp_label(data, flags, ant, pol, ch_ref, ang_deg)
-        del data
-        dp_sb, dp_se = dp_ss[0], dp_ss[-1]
+        try:
+            data = kio.load_data(fname)
+            target_list, c0_list, bad_ants, flux_model_list = kio.check_ants(fname)
+            data.select(ants=ant, pol=pol)
+            vis, flags = kio.call_vis(fname, recv)
+            vis_backup = vis.copy()
+            ra, dec, az, el = kio.load_coordinates(data)
+            timestamps, freqs = kio.load_tf(data)
+            dump_period = data.dump_period
 
-        nd_on_time, nd_cycle, nd_set = kd.cal_nd_basic_para(fname)
-        print (nd_on_time, nd_cycle, nd_set)
-        nd_on_edge, nd_off_edge = kd.cal_nd_edges(timestamps, nd_set, nd_cycle, nd_on_time)
-        print (len(nd_on_edge), len(nd_off_edge))
-        nd_ratio, nd_0, nd_1x = kd.cal_nd_ratio(timestamps, nd_on_time, nd_on_edge, dump_period)
+            if isinstance(target_list, list):
+                ang_deg = kio.load_ang_deg2(ra, dec, c0_list)
+            else:
+                ang_deg = kio.load_ang_deg(ra, dec, c0_list)
+            ang_deg = np.array(ang_deg)
 
-        nd_t0, nd_t1x, nd_s0, nd_s1x, nd_t0_ca, nd_t0_cb, nd_t1x_ca, nd_t1x_cb = kl.cal_label_intersec(dp_tt, dp_ss, nd_0, nd_1x)
-        labels_1x = kl.cal_label_intersec_complex(dp_tt, dp_ss, nd_0, nd_1x, nd_ratio)
+            dp_tt, dp_ss, *_ = kl.cal_dp_label(data, flags, ant, pol, ch_ref, ang_deg)
+            dp_sb, dp_se = dp_ss[0], dp_ss[-1]
 
-        dd = pickle.load(open(cali_output_file+fname+'_'+str(recv)+'/level3_data','rb'))
-        print (dd.keys())
+            nd_on_time, nd_cycle, nd_set = kd.cal_nd_basic_para(fname)
+            nd_on_edge, nd_off_edge = kd.cal_nd_edges(timestamps, nd_set, nd_cycle, nd_on_time)
+            nd_ratio, nd_0, nd_1x = kd.cal_nd_ratio(timestamps, nd_on_time, nd_on_edge, dump_period)
+            nd_t0, nd_t1x, nd_s0, *_ = kl.cal_label_intersec(dp_tt, dp_ss, nd_0, nd_1x)
 
-        check_map1 = dd['T_map']-dd['Tsm_map']-dd['Tel_map']
-        plt.figure(figsize=(12, 4))
-        plt.subplot(121)
-        plt.imshow(check_map1[nd_s0, 272:2869], aspect='auto')
-        plt.colorbar()
-        plt.xticks([0, 2868-272], [272, 2868])
-        plt.xlabel("Channels")
-        plt.ylabel("Timestamps")
-        plt.subplot(122)
-        plt.imshow(check_map1[nd_s0, 3133:3547], aspect='auto')
-        plt.colorbar()
-        plt.xticks([0, 3546-3133], [3133, 3546])
-        plt.xlabel("Channels")
-        plt.ylabel("Timestamps")
-        plt.suptitle(f"Sky temperature of {fname} {recv}")
-        plt.savefig(output_file1+'sky_temp_'+str(recv)+'.png', bbox_inches='tight')
-        plt.close()
+            # Plot sky temperature
+            check_map1 = dd['T_map'] - dd['Tsm_map'] - dd['Tel_map']
+            fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+            axs[0].imshow(check_map1[nd_s0, 272:2869], aspect='auto')
+            axs[1].imshow(check_map1[nd_s0, 3133:3547], aspect='auto')
+            for ax in axs:
+                ax.set_xlabel("Channels")
+                ax.set_ylabel("Timestamps")
+                ax.figure.colorbar(ax.images[0], ax=ax)
+            axs[0].set_xticks([0, 2868-272])
+            axs[0].set_xticklabels([272, 2868])
+            axs[1].set_xticks([0, 3546-3133])
+            axs[1].set_xticklabels([3133, 3546])
+            fig.suptitle(f"Sky temperature of {fname} {recv}")
+            fig.tight_layout()
+            fig.savefig(os.path.join(output_file1, f'sky_temp_{recv}.png'), bbox_inches='tight')
+            plt.close(fig)
 
-        check_map2 = dd['Tresi_map']
-        plt.figure(figsize=(12, 4))
-        plt.subplot(121)
-        plt.imshow(check_map2[nd_s0, 272:2869], aspect='auto')
-        plt.colorbar()
-        plt.xticks([0, 2868-272], [272, 2868])
-        plt.xlabel("Channels")
-        plt.ylabel("Timestamps")
-        plt.subplot(122)
-        plt.imshow(check_map2[nd_s0, 3133:3547], aspect='auto')
-        plt.colorbar()
-        plt.xticks([0, 3546-3133], [3133, 3546])
-        plt.xlabel("Channels")
-        plt.ylabel("Timestamps")
-        plt.suptitle(f"Residuals of {fname} {recv}")
-        plt.savefig(output_file1+'residuals_'+str(recv)+'.png', bbox_inches='tight')
-        plt.close()
+            # Plot residuals
+            check_map2 = dd['Tresi_map']
+            fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+            axs[0].imshow(check_map2[nd_s0, 272:2869], aspect='auto')
+            axs[1].imshow(check_map2[nd_s0, 3133:3547], aspect='auto')
+            for ax in axs:
+                ax.set_xlabel("Channels")
+                ax.set_ylabel("Timestamps")
+                ax.figure.colorbar(ax.images[0], ax=ax)
+            axs[0].set_xticks([0, 2868-272])
+            axs[0].set_xticklabels([272, 2868])
+            axs[1].set_xticks([0, 3546-3133])
+            axs[1].set_xticklabels([3133, 3546])
+            fig.suptitle(f"Residuals of {fname} {recv}")
+            fig.tight_layout()
+            fig.savefig(os.path.join(output_file1, f'residuals_{recv}.png'), bbox_inches='tight')
+            plt.close(fig)
+
+        except Exception as err:
+            print(f'{recv}: Failed during processing - {err}')
+        finally:
+            del dd, data, target_list, c0_list, bad_ants, flux_model_list
+            del vis, flags, vis_backup, ra, dec, az, el, timestamps, freqs, dump_period
+            del ang_deg, dp_tt, dp_ss, dp_sb, dp_se, nd_on_time, nd_cycle, nd_set
+            del nd_on_edge, nd_off_edge, nd_ratio, nd_0, nd_1x, nd_t0, nd_t1x, nd_s0
+            gc.collect()
 
 #         map_plots = check_map1[nd_s0, ch_plots]
 #         map_mean = np.mean(map_plots, axis=0)
@@ -156,11 +158,7 @@ for i, ant in enumerate(ants):
 #         resi_mean_std[1, :, i, j] = np.sqrt(np.mean((resi_plots[resi_plots > resi_mean] - resi_mean) ** 2, axis=0))
 #         resi_mean_std[2, :, i, j] = np.sqrt(np.mean((resi_plots[resi_plots < resi_mean] - resi_mean) ** 2, axis=0))
 
-#         del target_list, c0_list, bad_ants, flux_model_list, vis, flags, vis_backup, ra, dec, az, el, timestamps, freqs, dump_period, ang_deg
-#         del dp_tt, dp_ss, dp_f, dp_w, dp_t, dp_s, dp_slew, dp_stop, dp_sb, dp_se, nd_on_time, nd_cycle, nd_set, nd_on_edge, nd_off_edge, nd_ratio, nd_0, nd_1x
-#         del nd_t0, nd_t1x, nd_s0, nd_s1x, nd_t0_ca, nd_t0_cb, nd_t1x_ca, nd_t1x_cb, labels_1x
-#         del dd, check_map1, check_map2, map_plots, map_mean, resi_plots, resi_mean
-#         gc.collect()
+        # del map_plots, map_mean, resi_plots, resi_mean
 
 # for i, ch_plot in enumerate(ch_plots):
     

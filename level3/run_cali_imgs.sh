@@ -1,12 +1,15 @@
 #!/bin/bash
 
-# 1675623808 level3_1675623808_20250605_184237
+# 1675021905 level3_1675021905_20250609_150000
+# 1675210948 level3_1675210948_20250609_150000
+# 1675623808 level3_1675623808_20250609_150000
+# 1675632179 level3_1675632179_20250609_150000
 
 logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level3/logs"
 
 #SBATCH --job-name=cali_imgs
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=128GB
+#SBATCH --mem=64GB
 #SBATCH --time=2:00:00
 #SBATCH --output=${logs_dir}/job_%j.out
 #SBATCH --error=${logs_dir}/job_%j.err

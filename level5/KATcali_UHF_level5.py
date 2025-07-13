@@ -59,8 +59,8 @@ y_cen = float(sys.argv[7]) #deg #DEC
 y_half = float(sys.argv[8]) #deg
 print(fname, ant, input_file4_name, file_timestamp, x_cen, x_half, y_cen, y_half)
 
-input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/{input_file4_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level5/py_results/level5_{fname}_{file_timestamp}/{fname}_{ant}/'
+input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/sigma40/{input_file4_name}/'
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level5/py_results/sigma40/level5_{fname}_{file_timestamp}/{fname}_{ant}/'
 
 p_radec=np.loadtxt('radio_source_fsky.txt')
 

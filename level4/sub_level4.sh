@@ -1,7 +1,5 @@
 #! /bin/bash
 
-file_timestamp=$(date +"%Y%m%d_%H%M%S")
-
 # 1675623808 level3_1675623808_20250605_184237
 # 1675643846 level3_1675643846_20250605_184237
 # 1676313206 level3_1676313206_20250605_184237
@@ -9,31 +7,25 @@ file_timestamp=$(date +"%Y%m%d_%H%M%S")
 # 1678743988 level3_1678743988_20250605_184309
 # 1675210948 level3_1675210948_20250605_184341
 
-if [ $# -lt 2 ]; then
-    echo "Error: 2 arguments are required!"
-    echo "Usage: ./script.sh <fname> <input_file3>"
-    exit 1
-fi
+file_timestamp="20250609_150000"
 
 # Assign input parameters to variables
-fname=$1  # 1675632179 1679247986 1679592842 1679615321 1680644082
-input_file3=$2
+sed -n '501,1248p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi1_result_sort.txt | while read line  # counting from 1 instead of 0.
 
-echo "output directory and block name: $fname level4_${fname}_${file_timestamp}"
-echo "Input file level3: $input_file3"
-
-
-output_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/level4_${fname}_${file_timestamp}"
-logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/logs/job_${fname}_${file_timestamp}"
-mkdir -p ${output_dir}
-mkdir -p ${logs_dir}
-
-echo ${fname} ${ant}
-
-for i in {000..063}; do
-    ant="m${i}"
-
-    echo "${fname} ${ant}"
+do
+    fname=`echo $line | awk '{print $1}'`
+    ant=`echo $line | awk '{print $2}'`
+    input_file3="level3_${fname}_20250609_150000"
+    
+    echo "output directory and block name: $fname level4_${fname}_${file_timestamp}"
+    echo "Input file level3: $input_file3"
+    
+    output_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/sigma40/level4_${fname}_${file_timestamp}"
+    logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/logs/sigma40/job_${fname}_${file_timestamp}"
+    mkdir -p ${output_dir}
+    mkdir -p ${logs_dir}
+    
+    echo ${fname} ${ant}
 
     script_name="level4_${fname}_${ant}"
     echo "#! /bin/bash
