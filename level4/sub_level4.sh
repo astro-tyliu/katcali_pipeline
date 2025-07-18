@@ -7,10 +7,13 @@
 # 1678743988 level3_1678743988_20250605_184309
 # 1675210948 level3_1675210948_20250605_184341
 
-file_timestamp="20250609_150000"
+# level2_desi1_result_sort.txt 1 - 1248p
+# level2_desi2_result_sort.txt 1 - 1115p
+
+file_timestamp="20250714_050000"
 
 # Assign input parameters to variables
-sed -n '501,1248p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi1_result_sort.txt | while read line  # counting from 1 instead of 0.
+sed -n '501,1115p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi2_result_sort.txt | while read line  # counting from 1 instead of 0.
 
 do
     fname=`echo $line | awk '{print $1}'`
@@ -20,8 +23,8 @@ do
     echo "output directory and block name: $fname level4_${fname}_${file_timestamp}"
     echo "Input file level3: $input_file3"
     
-    output_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/sigma40/level4_${fname}_${file_timestamp}"
-    logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/logs/sigma40/job_${fname}_${file_timestamp}"
+    output_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/level4_${fname}_${file_timestamp}"
+    logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/logs/job_${fname}_${file_timestamp}"
     mkdir -p ${output_dir}
     mkdir -p ${logs_dir}
     

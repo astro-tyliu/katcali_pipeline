@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import matplotlib
 matplotlib.use('AGG')
-
-#imports
 import katdal
 import numpy as np
 import matplotlib.pylab as plt
@@ -16,11 +14,11 @@ import healpy as hp
 from astropy import units as u
 from matplotlib.offsetbox import AnchoredText
 import time
+from datetime import datetime
 import pickle
 import sys
 import json
 import os
-Tcmb=2.725
 import katcali
 import katcali.visualizer as kv
 import katcali.models as km
@@ -34,6 +32,10 @@ import katcali.beam as kb
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from matplotlib.gridspec import GridSpec
+
+
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+Tcmb=2.725
 
 print('start @ ' + time.asctime(time.localtime(time.time())) +'#')
 
@@ -55,7 +57,7 @@ p_radec=np.loadtxt('radio_source_fsky.txt')
 sigma = 4.
 #input_file='/idia/projects/hi_im/raw_vis/MeerKLASS2021/level3/data/'
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/{input_file3_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/sigma{int(sigma*10)}/level4_{fname}_{file_timestamp}/{fname}_{ant}/'
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/level4_{fname}_{file_timestamp}/{fname}_{ant}/'
 
 def cal_map_I(map_h, map_v):    
     assert(np.shape(map_h)==np.shape(map_v))
@@ -360,6 +362,7 @@ try:
         "max_iterations": niter,
         "true_iterations": true_iter,
         "final_num_del": len_del,
+        "run_time": current_time,
         "description": '### '+ant+' of '+fname+' finished successfully ###'
     }
     metadata_path = os.path.join(output_file, f"metadata.json")
@@ -375,6 +378,7 @@ except IOError:
                 "level3_input_file": input_file3_name,
                 "file_timestamp": file_timestamp
             },
+            "run_time": current_time,
             "description": '### failed for '+fname+', '+ant
         }
         metadata_path = os.path.join(output_file, f"metadata.json")

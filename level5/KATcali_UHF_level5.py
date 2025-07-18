@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import matplotlib
 matplotlib.use('AGG')
-
-#imports
 import katdal
 import numpy as np
 import matplotlib.pylab as plt
@@ -16,11 +14,11 @@ import healpy as hp
 from astropy import units as u
 from matplotlib.offsetbox import AnchoredText
 import time
+from datetime import datetime
 import pickle
 import sys
 import os
 import json
-Tcmb=2.725
 import katcali
 import katcali.visualizer as kv
 import katcali.models as km
@@ -41,6 +39,9 @@ from astropy.io import fits
 from astropy.wcs import WCS
 
 
+current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+Tcmb=2.725
+
 print ('start @ ' + time.asctime(time.localtime(time.time())) +'...')
 
 print  (plt.rcParams['font.size'], plt.rcParams[u'axes.linewidth'],plt.rcParams['lines.linewidth'])
@@ -59,8 +60,8 @@ y_cen = float(sys.argv[7]) #deg #DEC
 y_half = float(sys.argv[8]) #deg
 print(fname, ant, input_file4_name, file_timestamp, x_cen, x_half, y_cen, y_half)
 
-input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/sigma40/{input_file4_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level5/py_results/sigma40/level5_{fname}_{file_timestamp}/{fname}_{ant}/'
+input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/{input_file4_name}/'
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level5/py_results/level5_{fname}_{file_timestamp}/{fname}_{ant}/'
 
 p_radec=np.loadtxt('radio_source_fsky.txt')
 
