@@ -58,6 +58,7 @@ x_cen = float(sys.argv[5]) #deg #RA
 x_half = float(sys.argv[6]) #deg
 y_cen = float(sys.argv[7]) #deg #DEC
 y_half = float(sys.argv[8]) #deg
+pix_deg = float(sys.argv[9])
 print(fname, ant, input_file4_name, file_timestamp, x_cen, x_half, y_cen, y_half)
 
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/{input_file4_name}/'
@@ -81,8 +82,6 @@ freqs=kio.cal_freqs_UHF(range(4096))
 freqs = np.array(freqs)
 
 plot_gsize=90
-
-pix_deg=0.3
 
 N_half_x=int(x_half/pix_deg)
 N_half_y=int(y_half/pix_deg)
@@ -166,7 +165,7 @@ plt.ylabel('Dec',fontsize=16)
 plt.xlim([0,Npix_x])
 plt.ylim([0,Npix_y])
 plt.grid()
-plt.title('Pixelized ('+p_choice+') Tsky of '+fname+', '+ant+' (0.3deg/pixel)')
+plt.title('Pixelized ('+p_choice+') Tsky of '+fname+', '+ant+f' ({str(pix_deg)}deg/pixel)')
 plt.subplot(212,projection=w)
 plt.imshow(Tresi_xy[:,:,ch_plot].T,cmap=kv.cmap2(),aspect='auto')
 #plt.gca().invert_yaxis() #only works when no coordinates
@@ -177,7 +176,7 @@ plt.ylabel('Dec',fontsize=16)
 plt.xlim([0,Npix_x])
 plt.ylim([0,Npix_y])
 plt.grid()
-plt.title('Pixelized ('+p_choice+') Tres of '+fname+', '+ant+' (0.3deg/pixel)')
+plt.title('Pixelized ('+p_choice+') Tres of '+fname+', '+ant+f' ({str(pix_deg)}deg/pixel)')
 plt.savefig(output_file+'F_'+fname+'_'+ant+'_pix'+str(pix_deg)+'d_map.png', bbox_inches='tight')
 #plt.show()
 
@@ -205,7 +204,8 @@ metadata = {
         "x_cen": x_cen,
         "x_half": x_half,
         "y_cen": y_cen,
-        "y_half": y_half
+        "y_half": y_half,
+        "pix_deg": pix_deg
     },
     "p_choice": "ZEA",
     "description": '### '+ant+' of '+fname+' finished successfully ###'

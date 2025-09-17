@@ -10,10 +10,10 @@
 # level2_desi1_result_sort.txt 1 - 1248p
 # level2_desi2_result_sort.txt 1 - 1115p
 
-file_timestamp="20250714_050000"
+file_timestamp="20250815_153000"
 
 # Assign input parameters to variables
-sed -n '501,1115p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi2_result_sort.txt | while read line  # counting from 1 instead of 0.
+sed -n '1,1248p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi1_result_sort.txt | while read line  # counting from 1 instead of 0.
 
 do
     fname=`echo $line | awk '{print $1}'`

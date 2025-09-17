@@ -124,7 +124,7 @@ try:
     axs[1].set_xticks([0, 3546-3133])
     axs[1].set_xticklabels([3133, 3546])
     fig.suptitle(f"Sky temperature of {fname} {recv}")
-    fig.tight_layout()
+    # fig.tight_layout()
     fig.savefig(os.path.join(output_file1, f'sky_temp_{recv}.png'), bbox_inches='tight')
     plt.close(fig)
 
@@ -141,7 +141,7 @@ try:
     axs[1].set_xticks([0, 3546-3133])
     axs[1].set_xticklabels([3133, 3546])
     fig.suptitle(f"Residuals of {fname} {recv}")
-    fig.tight_layout()
+    # fig.tight_layout()
     fig.savefig(os.path.join(output_file1, f'residuals_{recv}.png'), bbox_inches='tight')
     plt.close(fig)
 

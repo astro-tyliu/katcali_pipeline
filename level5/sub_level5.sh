@@ -2,7 +2,8 @@
 
 # file_timestamp=$(date +"%Y%m%d_%H%M%S")
 
-# desi 1: x_cen x_half y_cen y_half; 149 26 -4 12
+# desi 1: x_cen x_half y_cen y_half; 149 26 -4 12 pix_deg
+# 20250609_150000
 # 1675623808 level4_1675623808_20250607_120732 149 26 -4 12
 # 1675643846 level4_1675643846_20250607_124604 149 26 -4 12
 # 1676313206 level4_1676313206_20250607_124632 149 26 -4 12
@@ -10,18 +11,24 @@
 # 1678743988 level4_1678743988_20250607_124704 149 26 -4 12
 # 1675210948 level4_1675210948_20250607_124705 149 26 -4 12
 
-# desi 2: x_cen x_half y_cen y_half; 168 26 -4 12
+# desi 2: x_cen x_half y_cen y_half; 168 26 -4 12 pix_deg
+# 20250714_050000
 
-file_timestamp_input="20250714_050000"
-file_timestamp="20250714_070000"
+# level2_desi1_result_sort.txt 1 - 1248p
+# level2_desi2_result_sort.txt 1 - 1115p
 
-if [ $# -lt 4 ]; then
-    echo "Error: 4 arguments are required!"
-    echo "Usage: ./script.sh <x_cen> <x_half> <y_cen> <y_half>"
+# manually modifying
+file_timestamp_input="20250815_153000"
+file_timestamp="20250815_153000"
+
+if [ $# -lt 5 ]; then
+    echo "Error: 5 arguments are required!"
+    echo "Usage: ./script.sh <x_cen> <x_half> <y_cen> <y_half> <pix_deg>"
     exit 1
 fi
 
-sed -n '1,1115p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi2_result_sort.txt | while read line
+# manually modifying
+sed -n '1,1248p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi1_result_sort.txt | while read line
 
 # Assign input parameters to variables
 do
@@ -34,6 +41,7 @@ do
     x_half=$2
     y_cen=$3
     y_half=$4
+    pix_deg=$5
     
     echo "block name and output directory: $fname level5_${fname}_${file_timestamp}"
     echo "Input file level4: $input_file4"
@@ -57,7 +65,7 @@ do
 
 export SINGULARITY_SHELL=/bin/bash" > ${script_name}
     
-    echo "singularity exec /data/exp_soft/containers/katcal.sif ./KATcali_UHF_level5.py ${fname} ${ant} ${input_file4} ${file_timestamp} ${x_cen} ${x_half} ${y_cen} ${y_half}" >> ${script_name}
+    echo "singularity exec /data/exp_soft/containers/katcal.sif ./KATcali_UHF_level5.py ${fname} ${ant} ${input_file4} ${file_timestamp} ${x_cen} ${x_half} ${y_cen} ${y_half} ${pix_deg}" >> ${script_name}
     sbatch ${script_name}
 
     rm -f ${script_name}

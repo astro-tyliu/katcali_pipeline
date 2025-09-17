@@ -137,7 +137,6 @@ try:
 
         del_point=[]
 
-        # sigma = 4.
         for l_i in range(len(l)):
             a=l[l_i]
             a_ch=np.ma.mean(np.ma.array(a,mask=mask_clean),axis=0)
@@ -211,7 +210,7 @@ try:
 
     for l_i in range(len(l)):
         a=l[l_i]
-        plt.subplot(len(l)/2*niter,2,i*len(l)+l_i+1)
+        plt.subplot(len(l)/2*12,2,i*len(l)+l_i+1)
 
         if l_i==0:
             del_point_plot=del_point0
