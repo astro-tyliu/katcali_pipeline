@@ -11,6 +11,7 @@ if [ $# -lt 3 ]; then
 fi
 
 dir="./results/py_results/${input_file5}"
+dir="/idia/projects/meerklass/share/tianyang_share/level5/${input_file5}"
 
 mkdir -p "$dir/map"
 

@@ -125,8 +125,9 @@ print (nd_on_time,nd_cycle,nd_set)
 # ratios = "{:03d}".format(int(ratio_t * 100)) + "{:03d}".format(int(ratio_ch * 100))
 
 if ant in ants_good: 
-    output_dir = base_dir + fname + "_" + ant + "/"
-    os.makedirs(output_dir, exist_ok=True)
+    # output_dir = base_dir + fname + "_" + ant + "/"
+    output_dir = base_dir
+    # os.makedirs(output_dir, exist_ok=True)
     try:  
         for index, pol in enumerate(['h','v']):
             #load data, labels, and parameters
@@ -135,12 +136,8 @@ if ant in ants_good:
             # Thresholds.append(str(int(Threshold_factor1 * 100)) + str(int(Threshold_factor2 * 100)) + \
             #                   str(int(Threshold_factor11 * 100)) + str(int(Threshold_factor22 * 100)))
 
-            ch_plot_list=[300,800,1300,1800,2300,2800,3200,3500]
+            ch_plot_list=[300,800,1300,1725,2058,2600,3200,3500]
             
-            # elif test == 'scheme2':
-            #     os.makedirs(output_dir + test + '/' + fname + '/' + ant, exist_ok=True)
-            # elif test == 'scheme3':
-            #     os.makedirs(output_dir + test + '/' + fname + '/' + pol + Thresholds[index], exist_ok=True)
             corr_id=kio.cal_corr_id(data,recv)
             assert(recv==data.corr_products[corr_id][0])
             assert(recv==data.corr_products[corr_id][1])
@@ -165,6 +162,8 @@ if ant in ants_good:
             dp_tt,dp_ss,dp_f,dp_w, dp_t,dp_s,dp_slew,dp_stop=kl.cal_dp_label(data,flags,ant,pol,ch_ref,ang_deg)
 
             ra1=ra.copy()
+            if np.max(ra1[dp_ss]) - np.min(ra1[dp_ss]) > 300:
+                ra1[ra>180]-=360
             # for i in range(len(ra)):
             #     if ra[i]>180:
             #         ra1[i]=ra[i]-360
@@ -207,7 +206,7 @@ if ant in ants_good:
                 plt.colorbar()
                 plt.title(fname+'_'+recv+'_ch'+str(ch_plot1))
                 #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
-            plt.savefig(output_dir + pol + '_scatter_map0.png')
+            plt.savefig(output_dir + fname + '_' + recv + '_scatter_map0.png')
             #plt.show()
 
             plt.figure(figsize=(24,20))
@@ -235,7 +234,7 @@ if ant in ants_good:
                     CS = plt.contour(xi, yi, zi, levels=15, linewidths=0.5, colors='k')
                     plt.xlim(ra[nd_s0].min(), ra[nd_s0].max())
                     plt.ylim(dec[nd_s0].min(), dec[nd_s0].max())
-            plt.savefig(output_dir + pol + '_map0.png')
+            plt.savefig(output_dir + fname + '_' + recv + '_map0.png')
             #plt.show()
 
             # RFI flagging
@@ -299,7 +298,7 @@ if ant in ants_good:
                 #plt.xlim(-30,1)
                 #plt.ylim(-37,-24)
                 plt.colorbar()
-            plt.savefig(output_dir + pol + '_scatter_map2.png')
+            plt.savefig(output_dir + fname + '_' + recv + '_scatter_map2.png')
             #plt.show()
 
             plt.figure(figsize=(24,20))
@@ -329,12 +328,7 @@ if ant in ants_good:
                     CS = plt.contour(xi, yi, zi, levels=15, linewidths=0.5, colors='k')
                     plt.xlim(ra[nd_s0].min(), ra[nd_s0].max())
                     plt.ylim(dec[nd_s0].min(), dec[nd_s0].max())
-            plt.savefig(output_dir + pol + '_map2.png')
-            # elif test == 'scheme2':
-            #     plt.savefig(output_dir + test + '/' + fname + '/' + ant + '/' + pol + Thresholds[index] + '_' + 'map2.png')
-            # elif test == 'scheme3':
-            #     plt.savefig(
-            #         output_dir + test + '/' + fname + '/' + pol + Thresholds[index] + '/' + ant + '_' + 'map2.png')
+            plt.savefig(output_dir + fname + '_' + recv + '_map2.png')
             #plt.show()
 
             vis_clean=vis_clean2.copy() #update vis_clean
@@ -361,7 +355,7 @@ if ant in ants_good:
             plt.imshow(vis_clean,aspect='auto',extent=(data.freqs[0]/1e6,data.freqs[-1]/1e6,len(timestamps),0))
             plt.xlabel('Freq (MHz)')
             #plt.savefig(str(fname)+'raw_vis.pdf', bbox_inches='tight')
-            plt.savefig(output_dir + pol + '_raw_vis.png', bbox_inches='tight')
+            plt.savefig(output_dir + fname + '_' + recv + '_raw_vis.png', bbox_inches='tight')
             #plt.show()
 
             plot_gsize=60
@@ -397,12 +391,12 @@ if ant in ants_good:
             plt.title('smoothed map of above')
             plt.xlabel('R.A. (J2000)')
             #plt.ylabel('Dec (J2000)')
-            plt.savefig(output_dir + pol + '_rfi_comp_map.png', bbox_inches='tight')
+            plt.savefig(output_dir + 'F_' + fname + '_' + recv + '_rfi_comp_map.png', bbox_inches='tight')
             #plt.show()
 
             d={}
             d['mask']=vis_clean.mask
-            fs=open(output_dir + pol + '_mask','wb')
+            fs=open(output_dir + fname + '_' + recv + '_mask','wb')
             pickle.dump(d,fs,protocol=2)
             fs.close()
             
@@ -426,9 +420,9 @@ if ant in ants_good:
         vis_v,flags_v= kio.call_vis(fname,recv2)
 
         #get mask
-        d1 = pickle.load(open(output_dir + 'h_mask','rb'))
+        d1 = pickle.load(open(output_dir + fname + '_' + ant + 'h_mask','rb'))
         mask_h=d1['mask']
-        d2 = pickle.load(open(output_dir + 'v_mask','rb'))
+        d2 = pickle.load(open(output_dir + fname + '_' + ant + 'v_mask','rb'))
         mask_v=d2['mask']
         #vis_clean
         vis_clean_h=np.ma.array(vis_h,mask=mask_h)
@@ -448,7 +442,7 @@ if ant in ants_good:
 
         d={}
         d['mask']=vis_div.mask
-        fs=open(output_dir + 'mask','wb')
+        fs=open(output_dir + fname + '_' + ant + '_mask','wb')
         pickle.dump(d,fs,protocol=2)
         fs.close()
 
@@ -473,7 +467,7 @@ if ant in ants_good:
         axes[1].text(800, 1.05, f'mode:{round(mode_ch.mode[0], 3)}', fontsize=18, color='red')
         axes[1].text(4800, 1.05, f'mode count:{mode_ch.count[0]}', fontsize=18, color='red')
         # don't include the flags
-        plt.savefig(output_dir + 'masked_ratio.png', bbox_inches='tight')
+        plt.savefig(output_dir + fname + '_' + ant + '_masked_ratio.png', bbox_inches='tight')
 
         plt.figure(figsize=(14,5.4))
         plt.subplot(121)
@@ -495,7 +489,7 @@ if ant in ants_good:
         plt.imshow(vis_clean_vv,aspect='auto',extent=(0,len(data.freqs),len(timestamps)*2,0))
         plt.xlabel('channel')
         #plt.savefig(str(fname)+'raw_vis.pdf', bbox_inches='tight')
-        plt.savefig(output_dir + 'clean_vis.png', bbox_inches='tight')
+        plt.savefig(output_dir + fname + '_' + ant + '_clean_vis.png', bbox_inches='tight')
         #plt.show()
 
         #show channel changes
@@ -532,7 +526,7 @@ if ant in ants_good:
             axes[1].text(800, 1.05, f'mode:{round(mode_chx.mode[0], 3)}', fontsize=18, color='red')
             axes[1].text(4800, 1.05, f'mode count:{mode_chx.count[0]}', fontsize=18, color='red')
             # include the flags
-            plt.savefig(output_dir + pol + '_masked_ratio.png')
+            plt.savefig(output_dir + fname + '_' + recv + '_masked_ratio.png')
 
             plt.figure(figsize=(24,20))
             for i in range(len(ch_plot_list)):
@@ -545,7 +539,7 @@ if ant in ants_good:
                 plt.ylabel('Dec')
                 plt.title(fname+'_'+recv+'_ch'+str(ch_plot1))
                 #plt.plot(p_radec[:,0],p_radec[:,1],'mo')
-            plt.savefig(output_dir + pol + '_scatter_map.png')
+            plt.savefig(output_dir + fname + '_' + recv + '_scatter_map.png')
             #plt.show()
 
             plt.figure(figsize=(24,20))
@@ -573,7 +567,7 @@ if ant in ants_good:
                     CS = plt.contour(xi, yi, zi, levels=15, linewidths=0.5, colors='k')
                     plt.xlim(ra[nd_s0].min(), ra[nd_s0].max())
                     plt.ylim(dec[nd_s0].min(), dec[nd_s0].max())
-            plt.savefig(output_dir + pol + '_map.png')
+            plt.savefig(output_dir + fname + '_' + recv + '_map.png')
             #plt.show()
         print ('### '+ant+' of '+fname+' finished successfully ###')
         print ('###############################################')
@@ -589,7 +583,7 @@ if ant in ants_good:
             "ch_ref": ch_ref,
             "description": '### '+ant+' of '+fname+' finished successfully ###'
         }
-        metadata_path = os.path.join(output_dir, f"metadata.json")
+        metadata_path = os.path.join(output_dir, f"{fname}_{ant}_metadata.json")
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=4)
             
@@ -603,7 +597,7 @@ if ant in ants_good:
             },
             "description": '*** '+ant+' of '+fname+' skipped becasue of some reason***'
         }
-        metadata_path = os.path.join(output_dir, f"metadata.json")
+        metadata_path = os.path.join(output_dir, f"{fname}_{ant}_metadata.json")
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=4)
         import traceback
@@ -619,4 +613,3 @@ print ('# end @ ' + time.asctime(time.localtime(time.time())) +'#')
 ################################################
 #### Jingying Wang <astro.jywang@gmail.com> ####
 ################################################
-

@@ -37,7 +37,6 @@
 # 1677795989 1677795989_20250521_161644
 # 1678899080 1678899080_20250528_164637
 # 1675816512 1675816512_20250521_161644
-
 # 1679419886 1679419886_20250521_161644
 # 1689090392 1689090392_20250528_164637
 # 1684781618 1684781618_20250521_161645
@@ -46,17 +45,20 @@
 # 1680644082 1680644082_20250521_161644
 # 1681229848 1681229848_20250521_161644
 
-# 定义 fname 列表
-fname="1681229848"
-input_file="1681229848_20250521_161644"
+# BOX 13: 1750887085 1753129121 1753559424 1753730543 1754679689 1755196048 1755369199 1756059088
 
-file_timestamp=$(date +"%Y%m%d_%H%M%S")
-output_dir="/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/level2_${fname}_${file_timestamp}"
-logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level2/logs/job_${fname}_${file_timestamp}"
+# 定义 fname 列表
+fname=$1
+
+input_file="20251015_090000"
+file_timestamp="20251015_090000"
+# file_timestamp=$(date +"%Y%m%d_%H%M%S")
+output_dir="/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/${file_timestamp}"
+logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level2/logs/${file_timestamp}"
 mkdir -p ${output_dir}
 mkdir -p ${logs_dir}
 
-# MaxMem: 10GB
+# MaxMem: 
 # fname 循环
 # for fname in "${fnames[@]}"; do
 

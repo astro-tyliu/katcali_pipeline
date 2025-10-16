@@ -1,14 +1,17 @@
 #!/bin/bash
 
+# BOX 13: 1750887085 1753129121 1753559424 1753730543 1754679689 1755196048 1755369199 1756059088
+
 # 生成时间戳
-file_timestamp=$(date +"%Y%m%d_%H%M%S")
+# file_timestamp=$(date +"%Y%m%d_%H%M%S")
+file_timestamp="20251015_090000"
 
 fname=$1
 
 # 创建目录（存放本次运行的数据）
 
-OUTPUT_DIR="/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/${fname}_${file_timestamp}"
-logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level1/logs/${fname}_${file_timestamp}"
+OUTPUT_DIR="/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/${file_timestamp}"
+logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level1/logs/${file_timestamp}"
 mkdir -p ${OUTPUT_DIR}
 mkdir -p ${logs_dir}
 
@@ -38,6 +41,7 @@ for i in {000..063}; do
 #SBATCH --time=2:00:00
 #SBATCH --error=${logs_dir}/job_${fname}_${ant}.%J.err
 #SBATCH --output=${logs_dir}/job_${fname}_${ant}.%J.out
+#SBATCH --exclude=compute-103
 
 export SINGULARITY_SHELL=/bin/bash
 

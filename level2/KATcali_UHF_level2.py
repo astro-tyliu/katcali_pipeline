@@ -53,6 +53,8 @@ def cal_tag(target):
         tag='HydraA'
     if target=='3C353':
         tag='3C353'
+    if target=='HerculesA':
+        tag='HerculA'
     if target=='':
         tag=''
     return tag
@@ -110,11 +112,10 @@ ant=sys.argv[2]
 pol=sys.argv[3]
 input_file_name=sys.argv[4]
 recv=ant+pol
-output_file=sys.argv[5] + f'/{fname}_{recv}/'
+output_file=sys.argv[5] + '/'
 print(f'fname = {fname}, recv = {recv}.')
 
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/{input_file_name}/'
-# output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/cali_{file_timestamp}/{fname}_{recv}/'
 
 data=kio.load_data(fname)
 target_list,c0_list,bad_ants,flux_model_list=kio.check_ants(fname)
@@ -133,7 +134,8 @@ if isinstance(target_list, list):
     for tag in tag_list:
         if tag != '':
             data.select()
-            data.select(targets=tag+'_u0.8')
+            # data.select(targets=tag+'_u0.8')
+            data.select(targets=tag+'_u')
             target_start=data.target_indices[0]
             target_start_list.append(target_start)
             data.select()
@@ -141,7 +143,8 @@ if isinstance(target_list, list):
             target_start_list.append('')
 else:
     data.select()
-    data.select(targets=tag_list+'_u0.8')
+    # data.select(targets=tag_list+'_u0.8')
+    data.select(targets=tag_list+'_u')
     target_start_list=data.target_indices[0]
     data.select()
 print(target_start_list)
@@ -246,10 +249,10 @@ if ant in ants_good:
     # RFI flagging
     #check with .py result
     try:
-        d3 = pickle.load(open(input_file+fname+'_'+ant+'/mask2', 'rb'))
+        d3 = pickle.load(open(input_file+fname+'_'+ant+'_mask2', 'rb'))
         print('mask2 loaded')
     except(Exception):
-        d3 = pickle.load(open(input_file+fname+'_'+ant+'/mask', 'rb'))
+        d3 = pickle.load(open(input_file+fname+'_'+ant+'_mask', 'rb'))
         print('mask loaded')
 
     os.makedirs(output_file, exist_ok=True)
@@ -530,7 +533,7 @@ if ant in ants_good:
                         #plt.title('calibrator Part II of '+str(fname)+', '+str(recv)+ ' @'+ str(round(freqs[ch_cali]/1e9,3)) +' GHz')
                         plt.ylim(-0.19,0.19)
                         plt.title('$T_{res}$ of the fitted curve above')
-                    plt.savefig(output_file + 'F_cali_ch'+str(ch_cali) + '.pdf', bbox_inches='tight')
+                    plt.savefig(output_file + f'F_{fname}_{recv}_cali_ch{str(ch_cali)}.png', bbox_inches='tight')
                     #plt.show()
                 
                 
@@ -607,7 +610,7 @@ if ant in ants_good:
                     d['nd_0']=nd_0
                     d['ra']=ra
                     d['dec']=dec
-                    fs=open(output_file+'level2_data','wb')
+                    fs=open(output_file+f'{fname}_{recv}_level2_data','wb')
                     pickle.dump(d,fs,protocol=2)
                     fs.close()
                     
@@ -618,16 +621,16 @@ if ant in ants_good:
                     d2['Tnd_diff_ratio_list']=Tnd_diff_ratio_list
                     d2['NRMSE1_list']=NRMSE1_list
                     d2['NRMSE2_list']=NRMSE2_list
-                    fs=open(output_file+'level2_Tnd_data','wb')
+                    fs=open(output_file+f'{fname}_{recv}_level2_Tnd_data','wb')
                     pickle.dump(d2,fs,protocol=2)
                     fs.close()
 
-                # --------------------------------------------------------------- #
-                with open(output_file+'level2_data', 'rb') as f:
-                    d_r = pickle.load(f)
-                gain_map1=d_r['gain_map']
-                print(f'gain_map1[dp_ca[0], 3200] is {gain_map1[dp_ca[0], 3200]}')
-                # --------------------------------------------------------------- #
+                # # --------------------------------------------------------------- #
+                # with open(output_file+f'{fname}_{recv}_level2_data', 'rb') as f:
+                #     d_r = pickle.load(f)
+                # gain_map1=d_r['gain_map']
+                # print(f'gain_map1[dp_ca[0], 3200] is {gain_map1[dp_ca[0], 3200]}')
+                # # --------------------------------------------------------------- #
 
                 print('***channel '+ str(ch_cali) +' finished')    
                 count_ch+=1
@@ -669,7 +672,7 @@ if ant in ants_good:
     d['nd_0']=nd_0
     d['ra']=ra
     d['dec']=dec
-    fs=open(output_file+'level2_data','wb')
+    fs=open(output_file+f'{fname}_{recv}_level2_data','wb')
     pickle.dump(d,fs,protocol=2)
     fs.close()
     
@@ -680,7 +683,7 @@ if ant in ants_good:
     d2['Tnd_diff_ratio_list']=Tnd_diff_ratio_list
     d2['NRMSE1_list']=NRMSE1_list
     d2['NRMSE2_list']=NRMSE2_list
-    fs=open(output_file+'level2_Tnd_data','wb')
+    fs=open(output_file+f'{fname}_{recv}_level2_Tnd_data','wb')
     pickle.dump(d2,fs,protocol=2)
     fs.close()
 
@@ -706,7 +709,7 @@ if ant in ants_good:
     plt.plot(Tnd_diff_ratio_list,'m.',ms=4)
     plt.xlabel('channel')
     plt.ylabel('Tnd_diff_ratio')
-    plt.savefig(output_file+'Tnd_all.pdf', bbox_inches='tight')
+    plt.savefig(output_file+f'Tnd_all_{fname}_{recv}.png', bbox_inches='tight')
 
     metadata = {
         "parameters": {
@@ -721,7 +724,7 @@ if ant in ants_good:
         "channels_cali": channels_cali,
         "description": '### '+recv+' of '+fname+' finished successfully ###'
     }
-    metadata_path = os.path.join(output_file, f"metadata.json")
+    metadata_path = os.path.join(output_file, f"{fname}_{recv}_metadata.json")
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4)
 
@@ -733,7 +736,7 @@ else:
         },
         "description": '***BAD ANT, Level2 calibartion for '+fname+' '+ant+pol+' skipped'
     }
-    metadata_path = os.path.join(output_file, f"metadata.json")
+    metadata_path = os.path.join(output_file, f"{fname}_{recv}_metadata.json")
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4)
     print ('***BAD ANT, Level2 calibartion for '+fname+' '+ant+pol+' skipped')

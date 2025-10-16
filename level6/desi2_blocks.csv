@@ -1,0 +1,22 @@
+﻿block_name,direction,calibrators,observation_start _time,level1_sort,level1_notes
+1675632179,rising,PictorA and PictorA,2023-02-05 21:23:26,good,none
+1677011008,rising,Empty and PictorA,2023-02-21 20:23:53,good,none
+1677183387,rising,Empty and PictorA,2023-02-23 20:16:56,moderate,none
+1678734987,rising,Empty and PictorA,2023-03-13 19:16:54,bad,none
+1679247986,rising,PictorA and PictorA,2023-03-19 17:48:42,good,none
+1679333668,rising,PictorA and PictorA,2023-03-20 17:36:43,moderate,none
+1679419886,rising,PictorA and PictorA,2023-03-21 17:33:20,bad,none
+1679615321,setting,3C273 and 3C273,2023-03-23 23:49:20,moderate,none
+1680626188,rising,PictorA and PictorA,2023-04-04 16:37:47,bad,none
+1680644082,setting,3C273 and 3C273,2023-04-04 21:35:52,bad,"upper-right flagged, Moon"
+1680798562,rising,PictorA and PictorA,2023-04-06 16:30:44,bad,none
+1681143685,rising,PictorA and PictorA,2023-04-10 16:23:37,moderate,none
+1681229848,rising,PictorA and PictorA,2023-04-11 16:19:37,moderate,none
+1681920680,rising,PictorA and PictorA,2023-04-19 16:13:19,bad,none
+1683492604,setting,3C273 and 3C273,2023-05-07 20:52:00,bad,none
+1684781618,setting,3C273 and 3C273,2023-05-22 18:56:08,bad,upper-right flagged
+1685641589,setting,3C273 and 3C273,2023-06-01 17:48:38,bad,upper-right flagged
+1688399183,setting,3C273 and 3C273,2023-07-03 15:48:37,bad,upper-right flagged
+1689003684,setting,3C273 and 3C273,2023-07-10 15:42:29,bad,upper-right flagged
+1689090392,setting,3C273 and 3C273,2023-07-11 15:48:58,bad,upper-right flagged
+1689176790,setting,3C273 and 3C273,2023-07-12 15:48:56,bad,upper-right flagged
