@@ -55,9 +55,9 @@ ch_ref=3200
 
 input_file1=f'/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/{input_file1_name}/'
 input_file2=f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/{input_file2_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/level3_{fname}_{file_timestamp}/{fname}_{recv}/'
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/{file_timestamp}/'
 
-d2=pickle.load(open(input_file2+fname+'_'+str(recv)+'/level2_Tnd_data','rb'),encoding='latin-1')
+d2=pickle.load(open(input_file2+fname+'_'+str(recv)+'_level2_Tnd_data','rb'),encoding='latin-1')
 print(d2.keys())
 Tnd_ref_list=d2['Tnd_ref_list']
 Tnda_list=d2['Tnda_list']
@@ -141,10 +141,10 @@ if ant in ants_good:
     
     # RFI flagging
     try:
-        d3 = pickle.load(open(input_file1+fname+'_'+ant+'/mask2','rb'))
+        d3 = pickle.load(open(input_file1+fname+'_'+ant+'_mask2','rb'))
         print ('# mask2 loaded')
     except(Exception):
-        d3 = pickle.load(open(input_file1+fname+'_'+ant+'/mask','rb'))
+        d3 = pickle.load(open(input_file1+fname+'_'+ant+'_mask','rb'))
         print ('# mask loaded')
                               
     mask_inter=d3['mask']
@@ -191,11 +191,11 @@ if ant in ants_good:
     Tnd_diff_ratio_limit = None
     NRMSE_limit = None
     if target_list[0] == target_list[-1]:
-        Tnd_diff_ratio_limit = 0.05
+        Tnd_diff_ratio_limit = 0.05  # 0.05
     elif target_list[0] == '' or target_list[-1] == '':
-        NRMSE_limit = 0.004
+        NRMSE_limit = 0.004  # 0.004
     else:
-        Tnd_diff_ratio_limit = 0.05
+        Tnd_diff_ratio_limit = 0.05  # 0.05
     
     ch_count=0
     
@@ -292,7 +292,7 @@ if ant in ants_good:
                     d['timestamps']=timestamps
                     d['ra']=ra
                     d['dec']=dec
-                    fs=open(output_file+'/level3_data','wb')
+                    fs=open(output_file+f'{fname}_{recv}_level3_data','wb')
                     pickle.dump(d,fs,protocol=2)
                     fs.close()
                 
@@ -321,7 +321,7 @@ if ant in ants_good:
         "channels_cali": channels_cali,
         "description": '### '+recv+' of '+fname+' finished successfully ###'
     }
-    metadata_path = os.path.join(output_file, f"metadata.json")
+    metadata_path = os.path.join(output_file, f"{fname}_{recv}_metadata.json")
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4)
 
@@ -338,7 +338,7 @@ d['nd_s0']=nd_s0
 d['timestamps']=timestamps
 d['ra']=ra
 d['dec']=dec
-fs=open(output_file+'/level3_data','wb')
+fs=open(output_file+f'{fname}_{recv}_level3_data','wb')
 pickle.dump(d,fs,protocol=2)
 fs.close()
 
