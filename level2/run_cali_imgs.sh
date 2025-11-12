@@ -48,8 +48,10 @@
 # 1680644082 1680644082_20250521_161644 level2_1680644082_20250603_132622
 # 1681229848 1681229848_20250521_161644 level2_1681229848_20250603_132623
 
-fname="1681229848"
-output_file="level2_1681229848_20250603_132623"
+# BOX 13: 1750887085 1753129121 1753559424 1753730543 1754679689 1755196048 1755369199 1756059088
+
+fname=$1
+input_file="20251015_090000"
 
 #SBATCH --job-name=${fname}
 #SBATCH --cpus-per-task=1
@@ -63,4 +65,4 @@ logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level2/logs/run_cali_imgs
 #SBATCH --error=${logs_dir}/job_%x_%j.err
 
 # 运行 Python 脚本
-singularity exec /data/exp_soft/containers/katcal.sif python3 ./cali_imgs.py ${fname} ${output_file}
+singularity exec /data/exp_soft/containers/katcal.sif python3 ./cali_imgs.py ${fname} ${input_file}

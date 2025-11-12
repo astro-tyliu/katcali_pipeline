@@ -38,12 +38,12 @@ from astropy import units as u
 
 
 fname = sys.argv[1]
-output_file = sys.argv[2]
+input_file = sys.argv[2]
 
 pols = ['h', 'v']
-cali_output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/{output_file}/'
-output_file = cali_output_file + 'cali_imgs/'
-os.makedirs(output_file, exist_ok=True)
+input_dir = f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/{input_file}/'
+output_dir = f'/scratch3/users/liutianyang/katcali_pipeline/level2/py_results/{input_file}_Tnd_all/{fname}/'
+os.makedirs(output_dir, exist_ok=True)
 
 # UHF ch_plot: (272,2869)+(3133,3547)
 data = kio.load_data(fname)
@@ -56,9 +56,9 @@ for i in range(64):
     try:
         for pol in pols:
             recv = ant + pol
-            with open(cali_output_file + str(fname) + '_' + str(recv) + f'/level2_data', 'rb') as f:
+            with open(input_dir + str(fname) + '_' + str(recv) + '_level2_data', 'rb') as f:
                 d_r = pickle.load(f)
-            # d_r = pickle.load(open(cali_output_file + str(fname) + '_' + str(recv) + f'/level2_data', 'rb'))
+            # d_r = pickle.load(open(input_dir + str(fname) + '_' + str(recv) + f'/level2_data', 'rb'))
             print(fname, recv)
             T_map1=d_r['T_map']
             Tresi_map1=d_r['Tresi_map']
@@ -69,7 +69,7 @@ for i in range(64):
             Tnd_diff_ratio_list1=d_r['Tnd_diff_ratio_list']
             NRMSE1_list1=d_r['NRMSE1_list']
             NRMSE2_list1=d_r['NRMSE2_list']
-            # d_r2=pickle.load(open(cali_output_file+str(fname)+'_'+str(recv)+f'_{ratios}_level2_Tnd_data','rb'))
+            # d_r2=pickle.load(open(input_dir+str(fname)+'_'+str(recv)+f'_{ratios}_level2_Tnd_data','rb'))
             # Tnd_ref_list2=d_r2['Tnd_ref_list']
             # Tnda_list2=d_r2['Tnda_list']
             # Tndb_list2=d_r2['Tndb_list']
@@ -93,7 +93,7 @@ for i in range(64):
             plt.plot(Tnd_diff_ratio_list1,'m.',ms=4)
             plt.xlabel('channel')
             plt.ylabel('Tnd_diff_ratio')
-            plt.savefig(output_file+'Tnd_all_'+str(recv)+'.png', bbox_inches='tight')
+            plt.savefig(output_dir+f'Tnd_all_{fname}_{recv}.png', bbox_inches='tight')
             # plt.show()
             plt.close()
 

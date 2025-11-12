@@ -136,7 +136,7 @@ if ant in ants_good:
             # Thresholds.append(str(int(Threshold_factor1 * 100)) + str(int(Threshold_factor2 * 100)) + \
             #                   str(int(Threshold_factor11 * 100)) + str(int(Threshold_factor22 * 100)))
 
-            ch_plot_list=[300,800,1300,1725,2058,2600,3200,3500]
+            ch_plot_list=[300,800,1300,1800,2300,2800,3200,3500]
             
             corr_id=kio.cal_corr_id(data,recv)
             assert(recv==data.corr_products[corr_id][0])

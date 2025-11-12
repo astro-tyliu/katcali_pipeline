@@ -55,9 +55,8 @@ print(fname,ant)
 p_radec=np.loadtxt('radio_source_fsky.txt')
 
 sigma = 4.
-#input_file='/idia/projects/hi_im/raw_vis/MeerKLASS2021/level3/data/'
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/{input_file3_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/level4_{fname}_{file_timestamp}/{fname}_{ant}/'
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/{file_timestamp}/'
 
 def cal_map_I(map_h, map_v):    
     assert(np.shape(map_h)==np.shape(map_v))
@@ -70,8 +69,8 @@ def cal_map_I(map_h, map_v):
     return map_m, diff_ratio
 
 try:
-    dh=pickle.load(open(input_file+fname+'_'+ant+'h/level3_data','rb'), encoding='latin-1')
-    dv=pickle.load(open(input_file+fname+'_'+ant+'v/level3_data','rb'), encoding='latin-1')
+    dh=pickle.load(open(input_file+fname+'_'+ant+'h_level3_data','rb'), encoding='latin-1')
+    dv=pickle.load(open(input_file+fname+'_'+ant+'v_level3_data','rb'), encoding='latin-1')
     os.makedirs(output_file, exist_ok=True)
 
     assert((dh['ra']==dv['ra']).all()==True)
@@ -333,12 +332,15 @@ try:
 
     ch_plot=3200
     plot_gsize=90
+    ra1=ra.copy()
+    if np.max(ra1[nd_s0]) - np.min(ra1[nd_s0]) > 300:
+        ra1[ra>180]-=360
 
     plt.figure(figsize=(14,5))
     ax=plt.subplot()
     p_data=Tresi_map[nd_s0,ch_plot]
     if (p_data.mask==True).all()==False:
-        kv.plot_mdata(ra[nd_s0],dec[nd_s0], p_data,gsize=plot_gsize, grid_method='linear', levels=6, x_mask=1, y_mask=2, cmap=kv.cmap2())
+        kv.plot_mdata(ra1[nd_s0],dec[nd_s0], p_data,gsize=plot_gsize, grid_method='linear', levels=6, x_mask=1, y_mask=2, cmap=kv.cmap2())
     ax.invert_xaxis()
     plt.plot(p_radec[:,0],p_radec[:,1],'mo')
     #plt.text(146.3, 8.5, 'Kelvin', rotation=0)
@@ -364,7 +366,7 @@ try:
         "run_time": current_time,
         "description": '### '+ant+' of '+fname+' finished successfully ###'
     }
-    metadata_path = os.path.join(output_file, f"metadata.json")
+    metadata_path = os.path.join(output_file, f"{fname}_{ant}_metadata.json")
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4)
 
@@ -380,7 +382,7 @@ except IOError:
             "run_time": current_time,
             "description": '### failed for '+fname+', '+ant
         }
-        metadata_path = os.path.join(output_file, f"metadata.json")
+        metadata_path = os.path.join(output_file, f"{fname}_{ant}_metadata.json")
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=4)
     print ('### failed for '+fname+', '+ant)

@@ -10,15 +10,16 @@
 fname=$1
 input_file4=$2
 
-dir="./results/py_results/${input_file4}"
+dir="/idia/projects/meerklass/share/tianyang_share/level4/${input_file4}"
+dir2="/idia/projects/meerklass/share/tianyang_share/level4/desi_ch_filter_final"
 
-mkdir -p "$dir/filter_final"
+mkdir -p "$dir2/${fname}_filter_final"
 # mkdir -p "$dir/Tres"
 
 for i in $(seq -w 000 063); do
 
     ant="m$i"
-    cp "$dir/${fname}_$ant/F_${fname}_${ant}_ch_filter_final.png" "$dir/filter_final/F_${fname}_${ant}_ch_filter_final.png"
+    cp "$dir/${fname}_$ant/F_${fname}_${ant}_ch_filter_final.png" "$dir2/${fname}_filter_final/F_${fname}_${ant}_ch_filter_final.png"
     # cp "$dir/${fname}_$ant/F_${fname}_${ant}_Tres.png" "$dir/Tres/F_${fname}_${ant}_Tres.png"
 
 done

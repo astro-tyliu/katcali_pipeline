@@ -1,34 +1,21 @@
 #! /bin/bash
 
-# 1675623808 level3_1675623808_20250605_184237
-# 1675643846 level3_1675643846_20250605_184237
-# 1676313206 level3_1676313206_20250605_184237
-# 1678295187 level3_1678295187_20250605_184309
-# 1678743988 level3_1678743988_20250605_184309
-# 1675210948 level3_1675210948_20250605_184341
+# BOX 13: 1750887085 1753129121 1753559424 1753730543 1754679689 1755196048 1755369199 1756059088
 
-# level2_desi1_result_sort.txt 1 - 1248p
-# level2_desi2_result_sort.txt 1 - 1115p
+# 定义 fname 列表
+fname=$1
 
-file_timestamp="20250815_153000"
+input_file3="BOX13_20251015_090000"
+file_timestamp="BOX13_20251015_090000_"
+output_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/${file_timestamp}"
+logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/logs/${file_timestamp}"
+mkdir -p ${output_dir}
+mkdir -p ${logs_dir}
 
-# Assign input parameters to variables
-sed -n '1,1248p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi1_result_sort.txt | while read line  # counting from 1 instead of 0.
+for i in {000..063}; do
+    ant="m${i}"
 
-do
-    fname=`echo $line | awk '{print $1}'`
-    ant=`echo $line | awk '{print $2}'`
-    input_file3="level3_${fname}_20250609_150000"
-    
-    echo "output directory and block name: $fname level4_${fname}_${file_timestamp}"
-    echo "Input file level3: $input_file3"
-    
-    output_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/level4_${fname}_${file_timestamp}"
-    logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/logs/job_${fname}_${file_timestamp}"
-    mkdir -p ${output_dir}
-    mkdir -p ${logs_dir}
-    
-    echo ${fname} ${ant}
+    echo "${fname} ${ant}"
 
     script_name="level4_${fname}_${ant}"
     echo "#! /bin/bash
@@ -36,15 +23,15 @@ do
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=16GB
 #SBATCH --time=1:00:00
-#SBATCH --error=${logs_dir}/job_${fname}_${ant}${pol}_%J.err
-#SBATCH --output=${logs_dir}/job_${fname}_${ant}${pol}_%J.out
+#SBATCH --error=${logs_dir}/job_${fname}_${ant}_%J.err
+#SBATCH --output=${logs_dir}/job_${fname}_${ant}_%J.out
 #SBATCH --exclude=compute-103
 
 export SINGULARITY_SHELL=/bin/bash" > ${script_name}
 
     echo "singularity exec /data/exp_soft/containers/katcal.sif ./KATcali_UHF_level4.py ${fname} ${ant} ${input_file3} ${file_timestamp}" >> ${script_name}
+
     sbatch ${script_name}
 
     rm -f ${script_name}
-        
 done

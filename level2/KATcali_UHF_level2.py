@@ -66,16 +66,16 @@ def cal_tag(target):
 # dp_t: track
 # dp_s: scan
 # dp_w: slew and stop
-# dp_tt: track and no flagging and close to the calibrator
-# dp_ss: scan and no flagging
+# dp_tt: track and no flagging and close to the calibrator at the reference channel
+# dp_ss: scan and no flagging at the reference channel
 # dp_u: dp_tt + dp_ss
-# dp_f: flagging for scan of (flagging or far from) for track
+# dp_f: dp_t and dp_s without dp_tt + dp_ss
 # dp_sb: the first dp_ss
 # dp_se: the last dp_ss
-# dp_ptr_list: any calibrators within ang_lim (0.5 deg) within dp_ss
+# dp_ptr_list: in dp_ss, where any nearby point sources are within ang_lim (0.5°)
 
-# dp_c0a - dp_c4a: dp_tt when observing the target 0/1/2/3/4 before dp_sb (drop two edges), where dp_c1a equals to the union of dp_c1a1,dp_c1a2 and dp_c1a3
-# dp_c0b - dp_c4b: dp_tt when observing the target 0/1/2/3/4 after dp_se (drop two edges), where dp_c1b equals to the union of dp_c1b1,dp_c1b2 and dp_c1b3
+# dp_c0a - dp_c4a: dp_tt (no flagging at the reference channel) when observing the target 0/1/2/3/4 before dp_sb (drop two edges), where dp_c1a equals to the union of dp_c1a1,dp_c1a2 and dp_c1a3
+# dp_c0b - dp_c4b: dp_tt (no flagging at the reference channel) when observing the target 0/1/2/3/4 after dp_se (drop two edges), where dp_c1b equals to the union of dp_c1b1,dp_c1b2 and dp_c1b3
 # dp_c1a1: before the earliest dp_c2a
 # dp_c1a2: between dp_c1a1 and dp_c1a3
 # dp_c1a3: after the latest dp_c3a
@@ -134,8 +134,8 @@ if isinstance(target_list, list):
     for tag in tag_list:
         if tag != '':
             data.select()
-            # data.select(targets=tag+'_u0.8')
-            data.select(targets=tag+'_u')
+            data.select(targets=tag+'_u0.8')
+            # data.select(targets=tag+'_u')  # BOX 13
             target_start=data.target_indices[0]
             target_start_list.append(target_start)
             data.select()
@@ -143,8 +143,8 @@ if isinstance(target_list, list):
             target_start_list.append('')
 else:
     data.select()
-    # data.select(targets=tag_list+'_u0.8')
-    data.select(targets=tag_list+'_u')
+    data.select(targets=tag_list+'_u0.8')
+    # data.select(targets=tag_list+'_u')  # BOX 13
     target_start_list=data.target_indices[0]
     data.select()
 print(target_start_list)
