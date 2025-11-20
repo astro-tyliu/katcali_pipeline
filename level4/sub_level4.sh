@@ -2,11 +2,10 @@
 
 # BOX 13: 1750887085 1753129121 1753559424 1753730543 1754679689 1755196048 1755369199 1756059088
 
-# 定义 fname 列表
 fname=$1
 
-input_file3="BOX13_20251015_090000"
-file_timestamp="BOX13_20251015_090000_"
+input_file3="desi1_20251109_160000"
+file_timestamp="desi1_20251109_160000"
 output_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/${file_timestamp}"
 logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level4/logs/${file_timestamp}"
 mkdir -p ${output_dir}

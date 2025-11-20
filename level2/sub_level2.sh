@@ -4,6 +4,7 @@
 
 # 定义 fname 列表
 fname=$1
+check_finish=$2  # Only "True" or "False"
 
 input_file="desi1_20251109_160000"
 file_timestamp="desi1_20251109_160000"
@@ -37,7 +38,7 @@ for i in {000..063}; do
 
 export SINGULARITY_SHELL=/bin/bash" > ${script_name}
 
-        echo "singularity exec /data/exp_soft/containers/katcal.sif python3 ./KATcali_UHF_level2.py ${fname} ${ant} ${pol} ${input_file} ${output_dir}" >> ${script_name}
+        echo "singularity exec /data/exp_soft/containers/katcal.sif python3 ./KATcali_UHF_level2.py ${fname} ${ant} ${pol} ${input_file} ${output_dir} ${check_finish}" >> ${script_name}
         # echo "singularity exec /data/exp_soft/containers/katcal.sif python3 ./tmp/KATcali_UHF_level2.py ${fname} ${ant} ${pol} ${input_file} ${output_dir}" >> ${script_name}
 
         sbatch ${script_name}

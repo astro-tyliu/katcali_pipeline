@@ -98,8 +98,8 @@ base_dir = sys.argv[7] + '/'
 
 # base_dir="/mnt/results/katcali_results/MeerKLASS_UHF/level1/py_results/"
 
-ch_plot=3200
-ch_ref=3200
+ch_plot=3300
+ch_ref=3300
 
 data=kio.load_data(fname)
 #print (data)

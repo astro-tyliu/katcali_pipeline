@@ -54,6 +54,8 @@ print(fname,ant)
 
 p_radec=np.loadtxt('radio_source_fsky.txt')
 
+# ch_ref = 3200
+
 sigma = 4.
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/{input_file3_name}/'
 output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/{file_timestamp}/'
@@ -110,7 +112,17 @@ try:
     freqs=kio.cal_freqs_UHF(range(4096))
     freqs = np.array(freqs)
 
-    ch_e=2869
+    #freq ranges are from Marta[Martha]
+    ch_Vod1 = kio.ch_finder(768,freqs)
+    ch_Vod2 = kio.ch_finder(778,freqs)
+    ch_MTN1 = kio.ch_finder(801,freqs)
+    ch_MTN2 = kio.ch_finder(811,freqs)
+    ch_Telk1 = kio.ch_finder(811,freqs)
+    ch_Telk2 = kio.ch_finder(821,freqs)
+    ch_tower=list(range(ch_Vod1,ch_Vod2))+list(range(ch_MTN1,ch_MTN2))+list(range(ch_Telk1,ch_Telk2))
+    ch_tower.sort()
+
+    ch_e=3547  #UHF_band
     
     assert((T_map_h.mask==Tresi_map_h.mask).all()==True)
     assert((T_map_v.mask==Tresi_map_v.mask).all()==True)
@@ -126,42 +138,54 @@ try:
 
     del_point0,del_point1,del_point2,del_point3,del_point4,del_point5,del_point6,del_point7=[],[],[],[],[],[],[],[]
 
-
     #####filter######
-    niter=12
-
+    niter=6
+    
+    plt.figure(figsize=(14,len(l)*niter*1.6))
+    plt.subplots_adjust (wspace=0.2, hspace=0.35) 
     for i in range(niter):
         print ('> The iteration '+str(i+1)+' is in progress...')
         mask_clean2=mask_clean.copy()
-
+        
         del_point=[]
-
+        
         for l_i in range(len(l)):
             a=l[l_i]
+            plt.subplot(len(l)/2*niter,2,i*len(l)+l_i+1)
             a_ch=np.ma.mean(np.ma.array(a,mask=mask_clean),axis=0)
-            # Following is the RFI removing process for each sub-band, which is different for different bands
+            plt.plot(freqs/1e6,a_ch,'g.', ms=4)
+            if l_i !=2 and l_i!=3:
+                plt.ylim(a_ch.min()*0.95,a_ch.max()*1.05)
+            
             try:
-                ax1=kf.curve_filter_ma_array(range(272,2869),a_ch[272:2869],sigma=sigma)#272-2868 filter
+                ax1=kf.curve_Rbf_filter_ma_array(range(272,2869),a_ch[272:2869],sigma=sigma)
+                #ax1=kf.curve_filter_ma_array(range(272,2869),a_ch[272:2869],sigma=sigma)
+                plt.plot(freqs[ax1]/1e6,a_ch[ax1],'.',color='r',ms=10) #deleted data
                 mask_clean2[:,ax1]=True ###apply to the mask
                 del_point+=list(ax1)
             except:
                 ax1=[]
-                print('* 272-2869 filter not applied')
+                print ('* 272-2869 filter not applied')
             #'''
             try:
-                ax2=kf.curve_filter_ma_array(range(3133,3547),a_ch[3133:3547],sigma=sigma)#3133-3546 filter
+                ax2=kf.curve_Rbf_filter_ma_array(range(3133,3547),a_ch[3133:3547],sigma=sigma)
+                #ax2=kf.curve_filter_ma_array(range(3133,3547),a_ch[3133:3547],sigma=sigma)
+                plt.plot(freqs[ax2]/1e6,a_ch[ax2],'.',color='r',ms=10) #deleted data
                 mask_clean2[:,ax2]=True ###apply to the mask
                 del_point+=list(ax2)
             except:
                 ax2=[]
-                print('* 3133-3547 filter not applied')
-            try:
-                ax3=kf.curve_filter_ma_array(range(272,3547),a_ch[272:3547],sigma=sigma,k=1)
+                print ('* 3133-3547 filter not applied')
+            
+            try:    
+                ax3=kf.curve_Rbf_filter_ma_array(range(272,3547),a_ch[272:3547],sigma=sigma)
+                #ax3=kf.curve_filter_ma_array(range(272,3547),a_ch[272:3547],sigma=sigma,k=1)
+                plt.plot(freqs[ax3]/1e6,a_ch[ax3],'.',color='r',ms=10) #deleted data
                 mask_clean2[:,ax3]=True ###apply to the mask
                 del_point+=list(ax3)
             except:
                 ax3=[]
-                print('* 272-3547 filter not applied')
+                print ('* 272-3547 filter not applied')
             #'''
             if l_i==0:
                 del_point0+=list(ax1)+list(ax2)+list(ax3)
@@ -179,11 +203,24 @@ try:
                 del_point6+=list(ax1)+list(ax2)+list(ax3)
             if l_i==7:
                 del_point7+=list(ax1)+list(ax2)+list(ax3)
-
+        
+            
+            plt.title('time mean '+ l_str[l_i]+', iter= '+str(i+1))
+            
+            if (l_i+2) % 2 == 0 and (l_i+1) % 7 !=0:
+                plt.ylabel('Temperature (K)')
+                
+            if (l_i+1) % 7 ==0:
+                plt.ylabel('gain')    
+                
+                
+            if (l_i+2) % 8 == 0 or (l_i+1) % 8 == 0:
+                plt.xlabel('Frequency (MHz)')
+                
         print ('masks before and after filter are same:',)
         print ((mask_clean==mask_clean2).all())
         mask_clean=mask_clean2.copy()
-
+        
         print (str(len(set(del_point))) + ' channels masked by '+str(len(del_point))+' times')
         if len(del_point)==0:
             print ('***filter done after iter time '+str(i+1)) 
@@ -203,14 +240,14 @@ try:
     del_point_all=del_point0+del_point1+del_point2+del_point3+del_point4+del_point5+del_point6+del_point7
     del_point_all=list(set(del_point_all))
     print (len(del_point_all))
-
+    
     plt.figure(figsize=(14,80))
-    plt.subplots_adjust(wspace=0.2, hspace=0.3) 
-
+    plt.subplots_adjust (wspace=0.2, hspace=0.3) 
+    
     for l_i in range(len(l)):
         a=l[l_i]
-        plt.subplot(len(l)/2*12,2,i*len(l)+l_i+1)
-
+        plt.subplot(len(l)/2*niter,2,i*len(l)+l_i+1)
+        
         if l_i==0:
             del_point_plot=del_point0
         if l_i==1:
@@ -227,32 +264,64 @@ try:
             del_point_plot=del_point6
         if l_i==7:
             del_point_plot=del_point7
-
+            
         a_ch=np.ma.mean(a,axis=0) #raw
-        plt.plot(freqs[del_point_all]/1e6,a_ch[del_point_all],'.',color='#ff7f0e',ms=6) #all deleted data
-        plt.plot(freqs[del_point_plot]/1e6,a_ch[del_point_plot],'.',color='#d62728',ms=6) #deleted data
-
+        plt.plot(freqs[del_point_all]/1e6,a_ch[del_point_all],'.',color='gold',ms=6) #all deleted data
+        plt.plot(freqs[del_point_plot]/1e6,a_ch[del_point_plot],'.',color='r',ms=6) #deleted data
+        
         a_ch1=np.ma.mean(np.ma.array(a,mask=mask_clean),axis=0) #clean 
         plt.plot(freqs/1e6,a_ch1,'.', ms=4) #clean data
-
+        
         if l_i !=2 and l_i!=3:
             plt.ylim(a_ch.min()*0.95,a_ch.max()*1.05)
-
+     
         plt.title('time mean '+ l_str[l_i])
-
+    
         if (l_i+2) % 2 == 0 and (l_i+1) % 7 !=0:
             plt.ylabel('Temperature (K)')
-
+    
         if (l_i+1) % 7 ==0:
             plt.ylabel('gain')    
-
+    
         if (l_i+2) % 8 == 0 or (l_i+1) % 8 == 0:
             plt.xlabel('Frequency (MHz)')
-
+            
         if l_i==1:
             plt.legend(['deleted data due to other parameters', 'deleted data due to this parameter','clean data'], fontsize=11.5)
     plt.savefig(output_file+'F_'+fname+'_'+ant+'_ch_filter_final.png', bbox_inches='tight')
     #plt.show()
+
+    mask_clean[:,ch_tower]=True
+
+    plt.figure(figsize=(14,80))
+    plt.subplots_adjust (wspace=0.2, hspace=0.3) 
+    
+    for l_i in range(len(l)):
+        a=l[l_i]
+        plt.subplot(len(l)/2*niter,2,i*len(l)+l_i+1)
+              
+        a_ch1=np.ma.mean(np.ma.array(a,mask=mask_clean),axis=0) #clean 
+        plt.plot(freqs/1e6,a_ch1,'.', ms=4) #clean data
+    
+       
+        if l_i !=2 and l_i!=3:
+            plt.ylim(a_ch1.min()*0.95,a_ch1.max()*1.05)
+     
+        plt.title('time mean '+ l_str[l_i])
+    
+        if (l_i+2) % 2 == 0 and (l_i+1) % 7 !=0:
+            plt.ylabel('Temperature (K)')
+    
+        if (l_i+1) % 7 ==0:
+            plt.ylabel('gain')    
+    
+        if (l_i+2) % 8 == 0 or (l_i+1) % 8 == 0:
+            plt.xlabel('Frequency (MHz)')
+            
+        if l_i==1:
+            plt.legend(['clean data'], fontsize=11.5)
+    plt.savefig(output_file+'F_'+fname+'_'+ant+'_ch_filter_final_clean.png', bbox_inches='tight')
+    # plt.show()
 
     def mask2int(mask):
         int_mask=np.zeros(np.shape(mask))
@@ -267,7 +336,6 @@ try:
     Tresi_map_h=np.ma.array(Tresi_map_h,mask=mask_clean)
     Tresi_map_v=np.ma.array(Tresi_map_v,mask=mask_clean)
 
-
     Tsky_map,Tsky_ratio=cal_map_I(Tsky_map_h, Tsky_map_v)
     Tresi_map=(Tresi_map_h+Tresi_map_v)/2.
     assert((Tsky_map.mask==Tresi_map.mask).all()==True)
@@ -278,9 +346,7 @@ try:
     plt.imshow(Tsky_map[:,272:3547],aspect='auto',extent=(freqs[272]/1e6,freqs[3547]/1e6,len(timestamps)*2,0))
     plt.xlabel('Frequency (MHz)')
     plt.ylabel('time (s)')
-    #plt.xlim(272,ch_e)
-    if fname=='1551055211':
-        plt.title('$I_{sky}$, '+ant+' of obs190225', y=1.15)
+    #plt.xlim(550,ch_e)
     clb = plt.colorbar()
     clb.set_label('Kelvin', labelpad=-35, y=1.06, rotation=0, fontsize=12)
     plt.twiny()
@@ -290,16 +356,14 @@ try:
     plt.imshow(Tresi_map[:,272:3547],aspect='auto',vmax=0.3, extent=(freqs[272]/1e6,freqs[3547]/1e6,len(timestamps)*2,0))
     plt.xlabel('Frequency (MHz)')
     plt.ylabel('time (s)')
-    #plt.xlim(272,ch_e)
-    if fname=='1551055211':
-        plt.title('$I_{resi}$, '+ant+' of obs190225', y=1.15)
+    #plt.xlim(550,ch_e)
     clb = plt.colorbar()
     clb.set_label('Kelvin', labelpad=-45, y=1.06, rotation=0, fontsize=12)
     plt.twiny()
     plt.imshow(Tresi_map[:,272:3547], aspect='auto',vmax=0.3, extent=(272,3547,len(timestamps)*2,0))
     plt.xlabel('channel')
     plt.savefig(output_file+'F_'+fname+'_'+ant+'_Inten.png', bbox_inches='tight')
-    #plt.show()
+    # plt.show()
 
     assert((Tsky_ratio.mask==mask_clean).all()==True)
     print (np.ma.max(Tsky_ratio))
@@ -307,6 +371,32 @@ try:
     assert((Tsky_map.mask==mask_clean).all()==True)
     assert((Tresi_map.mask==mask_clean).all()==True)
     assert((Tsky_ratio.mask==mask_clean).all()==True)
+
+    # data=kio.load_data(fname)
+    # j = 0
+    # for i in range(64):
+    #     ant = 'm' + '%03d' %i
+    #     for pol in ['h', 'v']:
+    #         recv = ant + pol
+    #         try:
+    #             vis,flags= kio.call_vis(fname,recv)
+    #             target_list,c0_list,bad_ants,flux_model_list=kio.check_ants(fname)
+    #             if isinstance(target_list, list):
+    #                 ang_deg=kio.load_ang_deg2(ra,dec,c0_list)
+    #             else:
+    #                 ang_deg=kio.load_ang_deg(ra,dec,c0_list)
+    #             dp_tt,dp_ss,dp_f,dp_w, dp_t,dp_s,dp_slew,dp_stop=kl.cal_dp_label(data,flags,ant,pol,ch_ref,ang_deg)
+    #             j = 1
+    #             break
+    #         except Exception as e:
+    #             continue
+    #     if j:
+    #         break
+    # del data, vis
+
+    # ra1=ra.copy()
+    # if np.max(ra1[dp_ss]) - np.min(ra1[dp_ss]) > 300:
+    #     ra1[ra>180]-=360
 
     d={}
     d['Tsky_map']=Tsky_map
@@ -330,7 +420,7 @@ try:
     pickle.dump(d1,fs,protocol=2)
     fs.close()
 
-    ch_plot=3200
+    ch_plot=3300
     plot_gsize=90
     ra1=ra.copy()
     if np.max(ra1[nd_s0]) - np.min(ra1[nd_s0]) > 300:
@@ -358,6 +448,7 @@ try:
             "level3_input_file": input_file3_name,
             "file_timestamp": file_timestamp
         },
+        "ch_e": ch_e,
         "ch_plot": ch_plot,
         "sigma": sigma,
         "max_iterations": niter,

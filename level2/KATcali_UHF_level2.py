@@ -114,6 +114,13 @@ input_file_name=sys.argv[4]
 recv=ant+pol
 output_file=sys.argv[5] + '/'
 print(f'fname = {fname}, recv = {recv}.')
+check_finish=sys.argv[6]
+if check_finish == "True":
+    check_finish = True
+elif check_finish == "False":
+    check_finish = False
+else:
+    raise ValueError(f"Invalid value for check_finish: {check_finish!r}")
 
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level1/py_results/{input_file_name}/'
 
@@ -207,7 +214,6 @@ if ant in ants_good:
     #     print(f"{recv} has been finished!")
     #     sys.exit()
     
-    channels_cali=list(range(272,2869))+list(range(3133,3547))
     # channels_cali=list(range(3200,3201))
     # # ----------------------------------------------------------------------------------------- #
 
@@ -316,27 +322,62 @@ if ant in ants_good:
     
     #Spill
     Tspill_func=km.cal_Tspill_func(el,pol,freqs,band='UHF')
-    
-    ################################
-    ####prepare for data storage#################
-    T_map=np.ma.array(np.zeros_like(vis),mask=True)
-    Tresi_map=np.ma.array(np.zeros_like(vis),mask=True)
-    gain_map=np.ma.array(np.zeros_like(vis),mask=True)
-    Tel_map=np.ma.array(np.zeros_like(vis),mask=True)
-    
-    Tnd_ref_list=[None for i in range(len(freqs))]
-    Tnda_list=[None for i in range(len(freqs))]
-    Tndb_list=[None for i in range(len(freqs))]
-    Tnd_diff_ratio_list=[None for i in range(len(freqs))]
-    NRMSE1_list=[None for i in range(len(freqs))]
-    NRMSE2_list=[None for i in range(len(freqs))]
-    
-    gta_param=[None for i in range(len(freqs))]
-    gtb_param=[None for i in range(len(freqs))]
-    
-    sma_param=[None for i in range(len(freqs))]
-    smb_param=[None for i in range(len(freqs))]
-    ################################################
+
+    channels_cali=list(range(272,2869))+list(range(3133,3547))
+    if check_finish:
+        fs = open(output_file + f'{fname}_{recv}_level2_data','rb')
+        d = pickle.load(fs)
+        fs.close()
+        T_map = d['T_map']
+        col_all_masked = T_map.mask.all(axis=0)
+        if col_all_masked.all():
+            last_valid_col = -1
+        else:
+            last_valid_col = np.where(~col_all_masked)[0][-1]
+        if last_valid_col == -1:
+            channels_cali=list(range(272,2869))+list(range(3133,3547))
+        elif last_valid_col >= 272 and last_valid_col <= 2868:
+            channels_cali=list(range(last_valid_col,2869))+list(range(3133,3547))
+        elif last_valid_col >= 3133 and last_valid_col < 3546:
+            channels_cali=list(range(last_valid_col,3547))
+        else:
+            print("It's already finished")
+            sys.exit()
+        Tresi_map = d['Tresi_map']
+        gain_map = d['gain_map']
+        Tel_map = d['Tel_map']
+        Tnd_ref_list = d['Tnd_ref_list']
+        Tnda_list = d['Tnda_list']
+        Tndb_list = d['Tndb_list']
+        Tnd_diff_ratio_list = d['Tnd_diff_ratio_list']
+        NRMSE1_list = d['NRMSE1_list']
+        NRMSE2_list = d['NRMSE2_list']
+        gta_param = d['gta_param']
+        gtb_param = d['gtb_param']
+        sma_param = d['sma_param']
+        smb_param = d['smb_param']
+        del d
+    else:
+        ################################
+        ####prepare for data storage#################
+        T_map=np.ma.array(np.zeros_like(vis),mask=True)
+        Tresi_map=np.ma.array(np.zeros_like(vis),mask=True)
+        gain_map=np.ma.array(np.zeros_like(vis),mask=True)
+        Tel_map=np.ma.array(np.zeros_like(vis),mask=True)
+        
+        Tnd_ref_list=[None for i in range(len(freqs))]
+        Tnda_list=[None for i in range(len(freqs))]
+        Tndb_list=[None for i in range(len(freqs))]
+        Tnd_diff_ratio_list=[None for i in range(len(freqs))]
+        NRMSE1_list=[None for i in range(len(freqs))]
+        NRMSE2_list=[None for i in range(len(freqs))]
+        
+        gta_param=[None for i in range(len(freqs))]
+        gtb_param=[None for i in range(len(freqs))]
+        
+        sma_param=[None for i in range(len(freqs))]
+        smb_param=[None for i in range(len(freqs))]
+        ################################################
     
     for ch_cali in channels_cali:
         start_time = time.time()

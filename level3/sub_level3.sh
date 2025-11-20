@@ -5,9 +5,9 @@
 # 定义 fname 列表
 fname=$1
 
-input_file1="20251015_090000"
-input_file2="20251015_090000"
-file_timestamp="20251015_090000_0.05"
+input_file1="desi1_20251109_160000"
+input_file2="desi1_20251109_160000"
+file_timestamp="desi1_20251109_160000"
 # file_timestamp=$(date +"%Y%m%d_%H%M%S")
 output_dir="/scratch3/users/liutianyang/katcali_pipeline/level3/py_results/${file_timestamp}"
 logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level3/logs/${file_timestamp}"

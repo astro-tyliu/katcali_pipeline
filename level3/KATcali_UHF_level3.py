@@ -191,11 +191,11 @@ if ant in ants_good:
     Tnd_diff_ratio_limit = None
     NRMSE_limit = None
     if target_list[0] == target_list[-1]:
-        Tnd_diff_ratio_limit = 0.05  # 0.05
+        Tnd_diff_ratio_limit = 1.0  # 0.05
     elif target_list[0] == '' or target_list[-1] == '':
-        NRMSE_limit = 0.004  # 0.004
+        NRMSE_limit = 1.0  # 0.004
     else:
-        Tnd_diff_ratio_limit = 0.05  # 0.05
+        Tnd_diff_ratio_limit = 1.0  # 0.05
     
     ch_count=0
     

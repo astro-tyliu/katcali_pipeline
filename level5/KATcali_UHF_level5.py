@@ -62,21 +62,24 @@ pix_deg = float(sys.argv[9])
 print(fname, ant, input_file4_name, file_timestamp, x_cen, x_half, y_cen, y_half)
 
 input_file=f'/scratch3/users/liutianyang/katcali_pipeline/level4/py_results/{input_file4_name}/'
-output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level5/py_results/level5_{fname}_{file_timestamp}/{fname}_{ant}/'
+output_file=f'/scratch3/users/liutianyang/katcali_pipeline/level5/py_results/{file_timestamp}/'
 
 p_radec=np.loadtxt('radio_source_fsky.txt')
 
-ch_plot=3200
+ch_plot=3300
 
-d1=pickle.load(open(input_file+fname+'_'+ant+f'/{fname}_{ant}_level4_data','rb'), encoding='latin-1')
+d1=pickle.load(open(input_file+f'/{fname}_{ant}_level4_data','rb'), encoding='latin-1')
 print(d1.keys())
-os.makedirs(output_file, exist_ok=True)
 
 ra=d1['ra']
 dec=d1['dec']
 Tresi_map=d1['Tresi_map']
 Tsky_map=d1['Tsky_map']
 nd_s0=d1['nd_s0_h']
+
+# ra1=ra.copy()
+# if np.max(ra1[nd_s0]) - np.min(ra1[nd_s0]) > 300:
+#     ra1[ra>180]-=360
 
 freqs=kio.cal_freqs_UHF(range(4096))
 freqs = np.array(freqs)
@@ -210,7 +213,7 @@ metadata = {
     "p_choice": "ZEA",
     "description": '### '+ant+' of '+fname+' finished successfully ###'
 }
-metadata_path = os.path.join(output_file, f"metadata.json")
+metadata_path = os.path.join(output_file, f"{fname}_{ant}_metadata.json")
 with open(metadata_path, "w") as f:
     json.dump(metadata, f, indent=4)
     

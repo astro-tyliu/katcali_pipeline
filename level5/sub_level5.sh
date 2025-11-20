@@ -1,56 +1,37 @@
 #! /bin/bash
 
-# file_timestamp=$(date +"%Y%m%d_%H%M%S")
-
 # desi 1: x_cen x_half y_cen y_half; 149 26 -4 12 pix_deg
-# 20250609_150000
-# 1675623808 level4_1675623808_20250607_120732 149 26 -4 12
-# 1675643846 level4_1675643846_20250607_124604 149 26 -4 12
-# 1676313206 level4_1676313206_20250607_124632 149 26 -4 12
-# 1678295187 level4_1678295187_20250607_124632 149 26 -4 12
-# 1678743988 level4_1678743988_20250607_124704 149 26 -4 12
-# 1675210948 level4_1675210948_20250607_124705 149 26 -4 12
-
 # desi 2: x_cen x_half y_cen y_half; 168 26 -4 12 pix_deg
-# 20250714_050000
+# BOX 13: x_cen x_half y_cen y_half; -18 15 -31 15 pix_deg
 
-# level2_desi1_result_sort.txt 1 - 1248p
-# level2_desi2_result_sort.txt 1 - 1115p
+fname=$1
+x_cen=$2
+x_half=$3
+y_cen=$4
+y_half=$5
+pix_deg=$6
 
 # manually modifying
-file_timestamp_input="20250815_153000"
-file_timestamp="20250815_153000"
+file_timestamp_input="BOX13_20251015_090000"
+file_timestamp="BOX13_20251015_090000"
 
-if [ $# -lt 5 ]; then
-    echo "Error: 5 arguments are required!"
-    echo "Usage: ./script.sh <x_cen> <x_half> <y_cen> <y_half> <pix_deg>"
+output_dir="/scratch3/users/liutianyang/katcali_pipeline/level5/py_results/${file_timestamp_input}"
+logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level5/logs/${file_timestamp}"
+
+mkdir -p ${output_dir}
+mkdir -p ${logs_dir}
+
+if [ $# -lt 6 ]; then
+    echo "Error: 6 arguments are required!"
+    echo "Usage: ./script.sh <fname> <x_cen> <x_half> <y_cen> <y_half> <pix_deg>"
     exit 1
 fi
 
-# manually modifying
-sed -n '1,1248p' /scratch3/users/liutianyang/katcali_pipeline/level2/py_results/others/level2_desi1_result_sort.txt | while read line
+for i in {000..063}; do
+    ant="m${i}"
 
-# Assign input parameters to variables
-do
-    fname=`echo $line | awk '{print $1}'`
-    ant=`echo $line | awk '{print $2}'`
-    input_file4="level4_${fname}_${file_timestamp_input}"
-    # fname=$1
-    # input_file4=$2
-    x_cen=$1
-    x_half=$2
-    y_cen=$3
-    y_half=$4
-    pix_deg=$5
-    
-    echo "block name and output directory: $fname level5_${fname}_${file_timestamp}"
-    echo "Input file level4: $input_file4"
-    
-    output_dir="/scratch3/users/liutianyang/katcali_pipeline/level5/py_results/level5_${fname}_${file_timestamp}"
-    logs_dir="/scratch3/users/liutianyang/katcali_pipeline/level5/logs/job_${fname}_${file_timestamp}"
-    mkdir -p ${output_dir}
-    mkdir -p ${logs_dir}
-    
+    echo "block name and output directory: $fname ${file_timestamp}"
+    echo "Input file level4: ${file_timestamp_input}"    
     echo ${fname} ${ant}
 
     script_name="level5_${fname}_${ant}"
@@ -59,13 +40,13 @@ do
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=16GB
 #SBATCH --time=1:00:00
-#SBATCH --error=${logs_dir}/job_${fname}_${ant}${pol}_%J.err
-#SBATCH --output=${logs_dir}/job_${fname}_${ant}${pol}_%J.out
+#SBATCH --error=${logs_dir}/job_${fname}_${ant}_%J.err
+#SBATCH --output=${logs_dir}/job_${fname}_${ant}_%J.out
 #SBATCH --exclude=compute-103
 
 export SINGULARITY_SHELL=/bin/bash" > ${script_name}
     
-    echo "singularity exec /data/exp_soft/containers/katcal.sif ./KATcali_UHF_level5.py ${fname} ${ant} ${input_file4} ${file_timestamp} ${x_cen} ${x_half} ${y_cen} ${y_half} ${pix_deg}" >> ${script_name}
+    echo "singularity exec /data/exp_soft/containers/katcal.sif ./KATcali_UHF_level5.py ${fname} ${ant} ${file_timestamp_input} ${file_timestamp} ${x_cen} ${x_half} ${y_cen} ${y_half} ${pix_deg}" >> ${script_name}
     sbatch ${script_name}
 
     rm -f ${script_name}
